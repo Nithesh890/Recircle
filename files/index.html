@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RECIRCLE — Find your people</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#101827">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RECIRCLE">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#F6F8F7;
+    --surface:#FFFFFF;
+    --ink:#101827;
+    --ink-soft:#5B6472;
+    --ink-faint:#98A1AC;
+    --navy:#101827;
+    --primary:#0E8C7F;       /* teal */
+    --primary-dark:#0A6B61;
+    --primary-tint:#E4F5F2;
+    --coral:#FF6B4A;         /* citrus coral — CTAs */
+    --coral-tint:#FFE9E2;
+    --sun:#FFB238;
+    --sun-tint:#FFF2DE;
+    --violet:#7C6CF0;
+    --violet-tint:#EDEBFE;
+    --border:#E4E8EA;
+    --radius-s:10px;
+    --radius-m:16px;
+    --radius-l:26px;
+    --shadow: 0 1px 2px rgba(16,24,39,.04), 0 10px 28px -14px rgba(16,24,39,.22);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh;}
+  img,svg{max-width:100%;}
+  h1,h2,h3,.display{font-family:'Sora',sans-serif;}
+  button{font-family:inherit;cursor:pointer;}
+  a{color:inherit;text-decoration:none;}
+  input,select,textarea{font-family:inherit;}
+
+  #app{min-height:100vh;}
+
+  /* ---------- top nav shell ---------- */
+  .shell{display:flex;flex-direction:column;min-height:100vh;}
+  .topnav{
+    display:flex;align-items:center;gap:14px;padding:14px 26px;background:var(--surface);
+    border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;
+  }
+  .topnav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .brand{display:flex;align-items:center;gap:9px;margin-right:8px;flex-shrink:0;}
+  .brand-name{font-family:'Sora';font-weight:800;font-size:18px;letter-spacing:-0.01em;}
+  .topnav-links{display:flex;gap:4px;flex:1;}
+  .nav-item{
+    display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;
+    color:var(--ink-soft);font-weight:600;font-size:13.5px;border:none;background:none;position:relative;
+  }
+  .nav-item:hover{background:var(--primary-tint);color:var(--primary-dark);}
+  .nav-item.active{background:var(--navy);color:#fff;}
+  .nav-badge{background:var(--coral);color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 6px;min-width:15px;text-align:center;}
+  .nav-item.active .nav-badge{background:rgba(255,255,255,.28);}
+
+  .main{flex:1;width:100%;}
+  .content{padding:30px 26px 60px;max-width:1000px;width:100%;margin:0 auto;}
+
+  .avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0;font-family:'Sora';}
+  .icon-btn{border:1px solid var(--border);background:var(--surface);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;position:relative;}
+  .icon-btn:hover{background:var(--primary-tint);}
+
+  .btn{border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px;border:none;display:inline-flex;align-items:center;gap:6px;transition:transform .12s ease;}
+  .btn:active{transform:scale(.96);}
+  .btn-primary{background:var(--navy);color:#fff;}
+  .btn-primary:hover{background:#000;}
+  .btn-coral{background:var(--coral);color:#fff;}
+  .btn-coral:hover{filter:brightness(.95);}
+  .btn-mint{background:var(--primary);color:#fff;}
+  .btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--border);}
+  .btn-outline:hover{border-color:var(--navy);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);}
+  .btn-ghost:hover{color:var(--ink);}
+  .btn-sm{padding:7px 14px;font-size:13px;}
+  .btn-block{width:100%;justify-content:center;}
+  .btn[disabled]{opacity:.5;cursor:default;pointer-events:none;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:20px;}
+  .card-shadow{box-shadow:var(--shadow);}
+  .card-accent{border-left:4px solid var(--primary);}
+
+  .pill{display:inline-flex;align-items:center;gap:4px;background:var(--primary-tint);color:var(--primary-dark);font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:999px;}
+  .pill-coral{background:var(--coral-tint);color:#C2451F;}
+  .pill-violet{background:var(--violet-tint);color:#5240C7;}
+  .pill-sun{background:var(--sun-tint);color:#9A6300;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+  .field input,.field select,.field textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-s);padding:11px 13px;font-size:14.5px;color:var(--ink);background:var(--bg);}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary);background:#fff;}
+  .field-err{font-size:12.5px;color:var(--coral);margin-top:5px;font-weight:600;}
+  .chip-select{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1.5px solid var(--border);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--ink-soft);}
+  .chip.selected{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:
+    radial-gradient(circle at 15% 10%, rgba(14,140,127,.10), transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(255,107,74,.10), transparent 40%), var(--bg);}
+  .auth-box{width:100%;max-width:420px;}
+  .auth-hero{text-align:center;margin-bottom:26px;}
+  .auth-hero .logo-row{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:14px;}
+  .auth-hero h1{font-size:25px;margin:0;letter-spacing:-0.02em;}
+  .auth-hero p{color:var(--ink-soft);font-size:14.5px;margin:6px 0 0;}
+  .tab-row{display:flex;background:var(--primary-tint);border-radius:999px;padding:4px;margin-bottom:20px;}
+  .tab-btn{flex:1;border:none;background:none;padding:9px;border-radius:999px;font-weight:700;font-size:13.5px;color:var(--primary-dark);}
+  .tab-btn.active{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;}
+  .student-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);padding:18px;display:flex;flex-direction:column;gap:10px;}
+  .student-card:hover{border-color:var(--primary);}
+  .student-top{display:flex;gap:12px;align-items:flex-start;}
+  .student-name{font-weight:700;font-size:15.5px;}
+  .student-meta{font-size:12.5px;color:var(--ink-faint);}
+  .student-bio{font-size:13px;color:var(--ink-soft);line-height:1.45;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .shared-note{font-size:12px;color:var(--primary-dark);font-weight:700;}
+
+  .empty-state{text-align:center;padding:56px 20px;color:var(--ink-faint);}
+  .empty-state .e-icon{font-size:34px;margin-bottom:10px;}
+  .empty-state h3{color:var(--ink);margin:0 0 6px;}
+
+  .fn-overlay{position:fixed;inset:0;background:rgba(16,24,39,.72);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s ease;}
+  .fn-overlay.show{opacity:1;pointer-events:auto;}
+  .fn-card{background:#fff;border-radius:28px;padding:44px 36px;text-align:center;max-width:360px;width:90%;transform:scale(.85) translateY(10px);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);}
+  .fn-overlay.show .fn-card{transform:scale(1) translateY(0);opacity:1;}
+  .fn-emoji{font-size:52px;margin-bottom:6px;}
+  .fn-title{font-family:'Sora';font-size:24px;font-weight:800;color:var(--ink);margin:6px 0;}
+  .fn-sub{color:var(--ink-soft);font-size:14.5px;margin-bottom:22px;}
+  .fn-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;}
+  .fn-step{background:var(--primary-tint);color:var(--primary-dark);border-radius:12px;padding:10px;font-weight:700;font-size:13.5px;opacity:0;transform:translateX(-8px);transition:all .3s ease;}
+  .fn-overlay.show .fn-step{opacity:1;transform:translateX(0);}
+  .fn-overlay.show .fn-step:nth-child(1){transition-delay:.25s;}
+  .fn-overlay.show .fn-step:nth-child(2){transition-delay:.4s;}
+
+  .toast-wrap{position:fixed;top:18px;right:18px;z-index:300;display:flex;flex-direction:column;gap:8px;}
+  .toast{background:var(--navy);color:#fff;padding:12px 16px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);animation:toastIn .25s ease;max-width:300px;}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(16,24,39,.5);z-index:150;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal-box{background:#fff;border-radius:var(--radius-l);padding:26px;max-width:440px;width:100%;max-height:86vh;overflow:auto;}
+
+  .chat-shell{display:flex;height:calc(100vh - 190px);height:calc(100dvh - 190px);border:1px solid var(--border);border-radius:var(--radius-m);overflow:hidden;background:#fff;}
+  .chat-list{width:280px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;}
+  .chat-list-item{display:flex;gap:10px;align-items:center;padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;}
+  .chat-list-item:hover{background:var(--primary-tint);}
+  .chat-list-item.active{background:var(--primary-tint);}
+  .chat-thread{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .chat-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .chat-msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;}
+  .msg-row{
+  display:flex;
+  width:100%;
+  min-width:0;
+}
+  .msg-row.mine{justify-content:flex-end;}
+  .msg-bubble{
+  max-width:70%;
+  width:max-content;
+  padding:9px 13px;
+  border-radius:16px;
+  font-size:14px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+  .msg-row.mine .msg-bubble{background:var(--navy);color:#fff;border-bottom-right-radius:4px;}
+  .msg-row:not(.mine) .msg-bubble{background:var(--bg);color:var(--ink);border-bottom-left-radius:4px;}
+  .chat-photo{max-width:100%;max-height:260px;border-radius:16px;display:block;cursor:pointer;object-fit:cover;}
+  .chat-input-row{display:flex;gap:6px;padding:12px 14px;border-top:1px solid var(--border);align-items:center;flex-wrap:nowrap;max-width:100%;box-sizing:border-box;}
+  .chat-input-row input{flex:1 1 auto;min-width:0;border:1.5px solid var(--border);border-radius:999px;padding:9px 15px;font-size:14px;}
+  .chat-round-btn{
+    flex:0 0 auto;width:38px;height:38px;border-radius:50%;border:none;
+    display:flex;align-items:center;justify-content:center;transition:transform .12s ease;padding:0;
+  }
+  .chat-round-btn:active{transform:scale(.92);}
+  .chat-round-btn svg{display:block;flex-shrink:0;}
+  .chat-round-btn.camera{background:var(--bg);border:1.5px solid var(--border);color:var(--ink-soft);}
+  .chat-round-btn.camera:hover{background:var(--primary-tint);color:var(--primary-dark);}
+  .chat-round-btn.send{background:var(--navy);color:#fff;}
+  .chat-round-btn.send:hover{background:#000;}
+  .starter-row{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px;}
+  .starter-chip{background:var(--sun-tint);color:#9A6300;border:none;border-radius:999px;padding:6px 11px;font-size:12px;font-weight:600;}
+
+  /* ---------- Founder Guide ---------- */
+  .guide-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:18px;align-items:start;}
+  .guide-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-m);overflow:hidden;}
+  .guide-head{padding:18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:11px;}
+  .guide-orb{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,var(--violet),var(--primary));display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .guide-chat{min-height:390px;max-height:520px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:11px;background:linear-gradient(180deg,#fff 0%,#F9FCFB 100%);}
+  .guide-msg{max-width:88%;padding:10px 12px;border-radius:14px;font-size:13.5px;line-height:1.48;white-space:normal;}
+  .guide-msg.assistant{align-self:flex-start;background:var(--primary-tint);color:#184C46;border-bottom-left-radius:4px;}
+  .guide-msg.user{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:4px;}
+  .guide-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:-4px;}
+  .guide-action{border:1px solid #BFE4DE;background:#fff;color:var(--primary-dark);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:700;}
+  .guide-action:hover{background:var(--primary-tint);}
+  .guide-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border);}
+  .guide-input input{flex:1;min-width:0;border:1.5px solid var(--border);border-radius:999px;padding:10px 13px;font-size:14px;}
+  .crisis-banner{display:flex;gap:12px;align-items:flex-start;background:#FFF4F0;border:1px solid #FFD1C5;border-radius:var(--radius-m);padding:15px 16px;margin-bottom:18px;}
+  .crisis-banner strong{display:block;color:#9A351C;margin-bottom:3px;font-size:13.5px;}
+  .crisis-banner p{margin:0;color:#744130;font-size:12.5px;line-height:1.45;}
+  .crisis-link{margin-left:auto;flex-shrink:0;color:#A33A20;font-size:12.5px;font-weight:800;background:none;border:none;text-decoration:underline;padding:2px;}
+  .guide-side .card{margin-bottom:14px;}
+  .match-mini{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+  .match-mini:last-child{border-bottom:none;}
+  .match-mini-main{min-width:0;flex:1;}
+  .match-reason{font-size:11.5px;color:var(--primary-dark);font-weight:700;margin-top:2px;}
+  .crisis-panel{margin-top:14px;background:#fff;border:1.5px solid var(--coral);border-radius:var(--radius-m);padding:18px;}
+  .crisis-panel h3{margin:0 0 7px;color:#8E311A;}
+  .crisis-panel p{font-size:13.5px;line-height:1.5;color:var(--ink-soft);}
+  .crisis-steps{padding-left:19px;margin:10px 0 16px;color:var(--ink-soft);font-size:13px;line-height:1.55;}
+  @media(max-width:760px){.guide-layout{grid-template-columns:1fr;}.guide-chat{min-height:330px;max-height:420px;}.crisis-banner{flex-wrap:wrap;}.crisis-link{margin-left:0;}}
+
+  .hero-band{background:var(--navy);color:#fff;border-radius:28px;padding:34px 30px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .hero-band h1{font-size:26px;margin:0 0 6px;}
+  .hero-band p{color:#B8C0CC;margin:0;font-size:14.5px;}
+  .stat-card{border-radius:var(--radius-m);padding:20px;color:#fff;position:relative;overflow:hidden;}
+  .stat-card h3{margin:2px 0 4px;font-size:16px;}
+  .stat-card p{margin:0;font-size:13px;opacity:.92;}
+  .stat-card .sc-icon{font-size:24px;}
+
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin:30px 0 14px;}
+  .section-head h2{font-size:17px;margin:0;}
+  .section-head:first-child{margin-top:0;}
+
+  .bottom-nav{display:none;}
+  .hide-on-mobile{display:inline-flex;}
+  .mobile-only{display:none;}
+  @media (max-width:860px){
+    .topnav-links{display:none;}
+    .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50;}
+    .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--ink-faint);font-size:10.5px;font-weight:700;padding:8px 0;min-height:44px;}
+    .bn-item.active{color:var(--primary);}
+    .bn-item .emoji{font-size:19px;}
+    .content{padding-bottom:calc(84px + env(safe-area-inset-bottom));}
+    .chat-shell{height:calc(100dvh - 230px);}
+    .chat-list{width:100%;}
+    .hide-on-mobile{display:none;}
+    .mobile-only{display:inline-flex;}
+    /* single-pane chat on phones: show list OR thread, never both squeezed together */
+    .chat-list-mode .chat-thread{display:none;}
+    .chat-thread-mode .chat-list{display:none;}
+  }
+  @media (max-width:600px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
+  .field input,.field select,.field textarea{font-size:16px;}
+  .chat-input-row input{font-size:16px;}
+  .btn{min-height:40px;}
+  .btn-sm{min-height:34px;}
+  
+  .msg-bubble{
+    max-width:82%;
+    font-size:15px;
+  }
+}
+  @media (max-width:420px){
+    .grid{grid-template-columns:1fr;}
+    .auth-hero h1{font-size:22px;}
+  }
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .table-scroll table{min-width:520px;}
+
+  .switch-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+  .switch-row:last-child{border-bottom:none;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;color:var(--ink-faint);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:10px;border-bottom:1px solid var(--border);}
+  tr:last-child td{border-bottom:none;}
+
+  .admin-shell{background:#0C1420;color:#fff;min-height:100vh;}
+  .admin-top{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid #1E2A3A;}
+  .admin-content{max-width:1080px;margin:0 auto;padding:28px;}
+  .admin-stat{background:#121D2C;border-radius:16px;padding:18px;border:1px solid #1E2A3A;}
+  .admin-stat .num{font-family:'Sora';font-size:26px;font-weight:800;}
+  .admin-stat .lbl{color:#8695A8;font-size:12.5px;margin-top:2px;}
+  .admin-card{background:#121D2C;border-radius:16px;padding:20px;border:1px solid #1E2A3A;margin-bottom:18px;}
+  .admin-card h3{margin-top:0;}
+  .badge-open{background:#3D2E1A;color:#FFB238;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;}
+  .badge-resolved{background:#123A32;color:#0E8C7F;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;}
+  .badge-dismissed{background:#1E2A3A;color:#8695A8;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;}
+  .admin-shell .field label{color:#8695A8;}
+  .admin-shell .field input,.admin-shell .field select,.admin-shell .field textarea{background:#0C1420;border-color:#1E2A3A;color:#fff;}
+  .admin-shell .btn-outline{border-color:#1E2A3A;color:#fff;}
+  .small-link{color:var(--ink-faint);font-size:12px;}
+
+  .config-banner{background:#FFF2DE;color:#9A6300;padding:14px 20px;font-size:13.5px;font-weight:600;text-align:center;}
+  .config-banner code{background:rgba(0,0,0,.06);padding:2px 6px;border-radius:5px;}
+
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+  @media (max-width:600px){
+    .content{padding:16px;}
+    .topnav{padding:12px 16px;}
+    .hero-band{padding:24px 20px;}
+    .admin-top{padding:14px 16px;}
+    .admin-content{padding:18px 16px;}
+    .modal-box{padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toastWrap" class="toast-wrap"></div>
+<div id="fnOverlayRoot"></div>
+
+<script>
+/* =========================================================
+   RECIRCLE — standalone build for Netlify + Supabase.
+
+   SETUP (see SETUP_GUIDE.md for full walkthrough):
+   1. Create a free project at supabase.com
+   2. Run schema.sql in the Supabase SQL editor
+   3. Paste your Project URL + anon public key below
+   4. Deploy this file (as index.html) to Netlify
+   ========================================================= */
+const SUPABASE_URL = "https://ghnryjigjjozlghukzjk.supabase.co";       // e.g. https://xxxxx.supabase.co
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdobnJ5amlnampvemxnaHVremprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MTI3MjgsImV4cCI6MjEwMzk4ODcyOH0.cjOJi1HKTksaljoox-bRbXjykv5CSLI0jV6aOV1zLeo";
+
+// This server-side endpoint protects the AI provider key. Never put an AI key in this file.
+const FOUNDER_GUIDE_API_URL = '/.netlify/functions/founder-guide';
+const CONFIGURED = !SUPABASE_URL.includes("YOUR_SUPABASE") && !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE");
+const sb = CONFIGURED ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const DEPARTMENTS = ["CSE","ECE","EEE","Mechanical","Civil","IT","AI & DS","Biotech"];
+const YEARS = ["1st Year","2nd Year","3rd Year","4th Year"];
+const INTEREST_OPTIONS = ["AI","Robotics","Programming","Electronics","Entrepreneurship","Music","Photography","Sports","Research","Design","Gaming","Writing","Film","Public Speaking"];
+const SKILL_OPTIONS = ["Python","JavaScript","Java","C++","Arduino","Electronics","UI/UX","AI/ML","Public Speaking","Video Editing","Marketing","3D Design","Embedded Systems","Data Analysis"];
+const LOOKING_FOR_OPTIONS = ["Friends","Study Partner","Project Team","Hackathon Team","Startup","Club","Research"];
+const AVATAR_COLORS = ["#0E8C7F","#FF6B4A","#7C6CF0","#FFB238","#3E8EF7","#E8578F"];
+
+let state = {
+  view: 'loading',
+  authUser: null,      // supabase auth user
+  me: null,             // my profile row
+  profiles: {},         // id -> profile
+  connections: [],       // rows {user_a,user_b,category}
+  requests: [],           // connection_requests rows
+  teams: [],
+  teamApplicants: {},     // team_id -> [{applicant,status}]
+  reports: [],
+  safetyFlags: [],
+  blocks: [],              // my blocked ids
+  notifs: [],
+  activeChatWith: null,   // profile id
+  activeTeam: null,
+  editingProfile: false,
+  authTab: 'login',
+  authError: '',
+  onboardStep: 0,
+  onboardData: {},
+  teamFormOpen: false,
+  discoverFilters: { dept:'', year:'', interest:'', lookingFor:'', q:'' },
+  viewingProfile: null,
+  viewingTeam: null,
+  friendsNowTarget: null,
+  adminView: 'overview',
+  auditLog: [],
+  aiMessages: [],
+  aiBusy: false,
+  crisisPanelOpen: false,
+  cofounderStep: null,
+  cofounderAnswers: {},
+  cofounderProfiles: {},
+  cofounderLikes: [],
+};
+
+/* ---------------- utilities ---------------- */
+function toast(msg){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className='toast'; el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+function esc(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(name){ return (name||'?').slice(0,2).toUpperCase(); }
+function avatarColor(name){ let h=0; for(let i=0;i<(name||'').length;i++) h+=name.charCodeAt(i); return AVATAR_COLORS[h%AVATAR_COLORS.length]; }
+function avatarHtml(username, size){ size=size||40; return `<div class="avatar" style="width:${size}px;height:${size}px;background:${avatarColor(username)};font-size:${size*0.38}px;">${initials(username)}</div>`; }
+function timeAgo(ts){ const s=Math.floor((Date.now()-new Date(ts).getTime())/1000); if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+function toggleChip(arr, val){ const i=arr.indexOf(val); if(i>=0) arr.splice(i,1); else arr.push(val); }
+function pName(id){ return state.profiles[id] ? state.profiles[id].username : '?'; }
+function idByUsername(uname){ const p = Object.values(state.profiles).find(p=>p.username===uname); return p?p.id:null; }
+
+function isConnected(idA,idB){ return state.connections.some(c=>(c.user_a===idA&&c.user_b===idB)||(c.user_a===idB&&c.user_b===idA)); }
+function connectionsOf(myId){ return state.connections.filter(c=>c.user_a===myId||c.user_b===myId).map(c=>c.user_a===myId?c.user_b:c.user_a); }
+function pendingRequestBetween(idA,idB){ return state.requests.find(r=>r.status==='pending' && ((r.from_user===idA&&r.to_user===idB)||(r.from_user===idB&&r.to_user===idA))); }
+function sharedInterests(id1,id2){ const a=(state.profiles[id1]?.interests)||[]; const b=(state.profiles[id2]?.interests)||[]; return a.filter(x=>b.includes(x)); }
+
+/* =========================================================
+   DATA LAYER (Supabase)
+   ========================================================= */
+async function loadAllData(){
+  const myId = state.authUser.id;
+  const [profilesRes, connRes, reqRes, teamsRes, reportsRes, flagsRes, blocksRes, notifRes, likesRes] = await Promise.all([
+    sb.from('profiles').select('*'),
+    sb.from('connections').select('*'),
+    sb.from('connection_requests').select('*'),
+    sb.from('teams').select('*').order('created_at', {ascending:false}),
+    sb.from('reports').select('*').order('created_at', {ascending:false}),
+    sb.from('ai_safety_flags').select('*').order('created_at', {ascending:false}).limit(100),
+    sb.from('blocks').select('*').eq('blocker', myId),
+    sb.from('notifications').select('*').eq('user_id', myId).order('created_at', {ascending:false}).limit(80),
+    sb.from('cofounder_likes').select('*'),
+  ]);
+  state.profiles = {}; (profilesRes.data||[]).forEach(p=>state.profiles[p.id]=p);
+  state.connections = connRes.data||[];
+  state.requests = reqRes.data||[];
+  state.teams = teamsRes.data||[];
+  state.reports = reportsRes.data||[];
+  state.safetyFlags = flagsRes.data||[];
+  state.blocks = (blocksRes.data||[]).map(b=>b.blocked);
+  state.notifs = notifRes.data||[];
+  state.cofounderLikes = likesRes.data||[];
+  state.me = state.profiles[myId] || null;
+}
+async function refreshLite(){
+  const myId = state.authUser.id;
+  const oldConns = state.connections;
+  const [connRes, reqRes, teamsRes, notifRes] = await Promise.all([
+    sb.from('connections').select('*'),
+    sb.from('connection_requests').select('*'),
+    sb.from('teams').select('*').order('created_at', {ascending:false}),
+    sb.from('notifications').select('*').eq('user_id', myId).order('created_at', {ascending:false}).limit(80),
+  ]);
+  state.connections = connRes.data||[];
+  state.requests = reqRes.data||[];
+  state.teams = teamsRes.data||[];
+  state.notifs = notifRes.data||[];
+  detectNewFriendsNow(oldConns);
+}
+
+/* ---------------- auth ---------------- */
+async function doRegister(email, fullName, username, password, dept, year){
+  fullName = fullName.trim().replace(/\s+/g,' ');
+  username = username.trim().toLowerCase();
+  email = email.trim();
+  if(!/^[a-z0-9_]{3,20}$/.test(username)){ state.authError='Username must be 3-20 characters: letters, numbers, underscore only.'; render(); return; }
+  if(!email.includes('@')){ state.authError='Enter a valid email address.'; render(); return; }
+  if(fullName.length<2 || fullName.length>60){ state.authError='Enter your real name (2-60 characters).'; render(); return; }
+  if(password.length<6){ state.authError='Password must be at least 6 characters.'; render(); return; }
+  if(!dept||!year){ state.authError='Please select your department and year.'; render(); return; }
+
+  const { data: existing } = await sb.from('profiles').select('id').eq('username', username).maybeSingle();
+  if(existing){ state.authError='That username is already taken.'; render(); return; }
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if(error){ state.authError = error.message; render(); return; }
+  if(!data.user){ state.authError='Check your email to confirm your account, then log in.'; render(); return; }
+
+  const { error: profErr } = await sb.from('profiles').insert({
+    id: data.user.id, full_name: fullName, username, department: dept, year, bio:'', interests:[], skills:[], goals:'', looking_for:[]
+  });
+  if(profErr){ state.authError = profErr.message; render(); return; }
+
+  state.authUser = data.user;
+  await loadAllData();
+  seedCelebratedIfNeeded();
+  state.onboardStep = 1; state.onboardData = { interests:[], skills:[], lookingFor:[] };
+  state.view='onboarding'; state.authError=''; render();
+}
+async function doLogin(email, password){
+  const { data, error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
+  if(error){ state.authError = error.message; render(); return; }
+  state.authUser = data.user;
+  await loadAllData();
+  seedCelebratedIfNeeded();
+  if(state.me && state.me.suspended){ state.authError='This account has been suspended. Contact campus admin.'; await sb.auth.signOut(); state.authUser=null; render(); return; }
+  state.authError='';
+  state.view = (state.me && (state.me.interests?.length || state.me.bio)) ? 'home' : 'onboarding';
+  if(state.view==='onboarding'){ state.onboardStep=1; state.onboardData={interests:[],skills:[],lookingFor:[]}; }
+  render();
+}
+async function doLogout(){ await sb.auth.signOut(); state.authUser=null; state.me=null; state.view='login'; render(); }
+
+/* ---------------- onboarding ---------------- */
+async function finishOnboarding(){
+  const d = state.onboardData;
+  const { error } = await sb.from('profiles').update({
+    bio: d.bio||'', interests: d.interests||[], skills: d.skills||[], goals: d.goals||'', looking_for: d.lookingFor||[]
+  }).eq('id', state.authUser.id);
+  if(error){ toast('Could not save profile: '+error.message); return; }
+  await loadAllData();
+  state.view='home'; render();
+}
+
+/* ---------------- connections ---------------- */
+async function sendConnectRequest(targetId){
+  const myId = state.authUser.id;
+  if(isConnected(myId,targetId)){ toast('You are already connected.'); return; }
+  if(pendingRequestBetween(myId,targetId)){ toast('A request is already pending.'); return; }
+  const { error } = await sb.from('connection_requests').insert({ from_user: myId, to_user: targetId, status:'pending' });
+  if(error){ toast('Could not send request: '+error.message); return; }
+  await sb.from('notifications').insert({ user_id: targetId, type:'request', body: `@${state.me.username} wants to connect with you` });
+  toast('Request sent!');
+  await refreshLite(); render();
+}
+async function respondRequest(reqId, accept){
+  const r = state.requests.find(x=>x.id===reqId); if(!r) return;
+  await sb.from('connection_requests').update({ status: accept?'accepted':'declined' }).eq('id', reqId);
+  if(accept){
+    const a = [r.from_user, r.to_user].sort();
+    const { data: inserted } = await sb.from('connections').insert({ user_a:a[0], user_b:a[1], category:'Friends' }).select().single();
+    if(inserted) markCelebrated(inserted.id);
+    const otherId = r.from_user===state.authUser.id ? r.to_user : r.from_user;
+    await sb.from('notifications').insert({ user_id: r.from_user, type:'accepted', body:`@${state.me.username} accepted your connection request!` });
+    await refreshLite();
+    showFriendsNow(otherId);
+  } else {
+    await refreshLite(); render();
+  }
+}
+function showFriendsNow(otherId){ showMatchOverlay(otherId, 'friends'); }
+function showMatchOverlay(otherId, mode){
+  state.friendsNowTarget = otherId;
+  state.matchOverlayMode = mode || 'friends';
+  const root = document.getElementById('fnOverlayRoot');
+  if(!root) return;
+  root.innerHTML = renderFriendsNowOverlay();
+  requestAnimationFrame(()=>{ const ov=document.getElementById('fnOverlay'); if(ov) ov.classList.add('show'); });
+  const fnClose = document.getElementById('fnClose');
+  if(fnClose) fnClose.addEventListener('click', closeFriendsNow);
+  const fnSayHello = document.getElementById('fnSayHello');
+  if(fnSayHello) fnSayHello.addEventListener('click', ()=>{
+    const target = state.friendsNowTarget; closeFriendsNow();
+    if(isConnected(state.authUser.id, target)){
+      setTimeout(()=>{ state.activeChatWith=target; state.view='chatThread'; render(); setTimeout(()=>renderChatThread(target),30); }, 220);
+    } else {
+      setTimeout(()=>sendConnectRequest(target), 220);
+    }
+  });
+}
+function closeFriendsNow(){
+  const ov = document.getElementById('fnOverlay'); if(ov) ov.classList.remove('show');
+  state.friendsNowTarget=null;
+  setTimeout(()=>{ const root=document.getElementById('fnOverlayRoot'); if(root) root.innerHTML=''; }, 250);
+}
+
+/* ---- "Friends Now" tracking so BOTH people see the celebration, not just
+   whoever clicked Accept. We can't add a database column for this without
+   touching schema.sql (which we're avoiding on a live app with real users),
+   so we track "already celebrated" connection ids in this browser's
+   localStorage per account, and poll for newly-appeared connections. ---- */
+function celebratedKey(){ return 'recircle_celebrated_'+(state.authUser?state.authUser.id:'anon'); }
+function loadCelebrated(){
+  try{ return new Set(JSON.parse(localStorage.getItem(celebratedKey())||'[]')); }
+  catch(e){ return new Set(); }
+}
+function saveCelebrated(){
+  try{ localStorage.setItem(celebratedKey(), JSON.stringify([...state.celebratedIds])); }catch(e){}
+}
+function markCelebrated(connId){
+  if(!state.celebratedIds) state.celebratedIds = loadCelebrated();
+  state.celebratedIds.add(connId); saveCelebrated();
+}
+function seedCelebratedIfNeeded(){
+  if(!state.authUser) return;
+  const already = localStorage.getItem(celebratedKey());
+  if(already===null){
+    const myId = state.authUser.id;
+    const mine = state.connections.filter(c=>c.user_a===myId||c.user_b===myId).map(c=>c.id);
+    state.celebratedIds = new Set(mine);
+    saveCelebrated();
+  } else {
+    state.celebratedIds = loadCelebrated();
+  }
+}
+function detectNewFriendsNow(oldConns){
+  if(state.friendsNowTarget) return; // one celebration at a time
+  if(!state.celebratedIds) state.celebratedIds = loadCelebrated();
+  const myId = state.authUser.id;
+  const oldIds = new Set(oldConns.map(c=>c.id));
+  for(const c of state.connections){
+    if((c.user_a===myId||c.user_b===myId) && !oldIds.has(c.id) && !state.celebratedIds.has(c.id)){
+      markCelebrated(c.id);
+      const otherId = c.user_a===myId? c.user_b : c.user_a;
+      showFriendsNow(otherId);
+      break;
+    }
+  }
+}
+
+/* ---------------- teams ---------------- */
+async function createTeam(data){
+  const myId = state.authUser.id;
+  const { error } = await sb.from('teams').insert({
+    type:data.type, title:data.title, description:data.description, skills_needed:data.skillsNeeded,
+    size:data.size, creator: myId, members:[myId], status:'open'
+  });
+  if(error){ toast('Could not create team: '+error.message); return; }
+  state.teamFormOpen=false; state.view='teams'; state.pendingTeamDraft=null; state.lastTeamDraft=null; state.teamFormDraft=null;
+  await refreshLite(); render();
+  toast('Team posted!');
+}
+async function applyToTeam(teamId){
+  const myId = state.authUser.id;
+  const t = state.teams.find(x=>x.id===teamId); if(!t) return;
+  if(t.members.includes(myId)){ toast('You are already a member.'); return; }
+  const { error } = await sb.from('team_applicants').insert({ team_id: teamId, applicant: myId, status:'pending' });
+  if(error){ toast(error.message.includes('duplicate')?'You already applied.':('Could not apply: '+error.message)); return; }
+  await sb.from('notifications').insert({ user_id: t.creator, type:'team_apply', body:`@${state.me.username} applied to join "${t.title}"` });
+  state._myApplications = state._myApplications || {}; state._myApplications[teamId]=true;
+  toast('Application sent!'); render();
+}
+async function loadApplicants(teamId){
+  const { data } = await sb.from('team_applicants').select('*').eq('team_id', teamId);
+  state.teamApplicants[teamId] = data||[];
+}
+async function decideApplicant(teamId, applicantId, accept){
+  await sb.from('team_applicants').update({ status: accept?'accepted':'declined' }).eq('team_id',teamId).eq('applicant',applicantId);
+  const t = state.teams.find(x=>x.id===teamId);
+  if(accept && t && !t.members.includes(applicantId)){
+    const newMembers = [...t.members, applicantId];
+    await sb.from('teams').update({ members: newMembers }).eq('id', teamId);
+  }
+  await sb.from('notifications').insert({ user_id: applicantId, type:'team_decision', body: accept? `You were accepted into "${t.title}"!` : `Your application to "${t.title}" was declined.` });
+  await refreshLite(); await loadApplicants(teamId); render();
+}
+
+/* ---------------- chat ---------------- */
+async function sendMessage(otherId, text, imageUrl){
+  text = (text||'').trim();
+  if(!text && !imageUrl) return;
+  const myId = state.authUser.id;
+  const { error } = await sb.from('messages').insert({ sender: myId, recipient: otherId, body: text, image_url: imageUrl||null });
+  if(error){ toast('Message failed: '+error.message); return; }
+  await sb.from('notifications').insert({ user_id: otherId, type:'message', body: imageUrl ? `@${state.me.username} sent a photo` : `New message from @${state.me.username}` });
+  renderChatThread(otherId);
+}
+async function loadMessages(otherId){
+  const myId = state.authUser.id;
+  const { data } = await sb.from('messages').select('*')
+    .or(`and(sender.eq.${myId},recipient.eq.${otherId}),and(sender.eq.${otherId},recipient.eq.${myId})`)
+    .order('created_at', {ascending:true});
+  return data||[];
+}
+
+/* Resize + compress a photo in the browser before it ever reaches Supabase,
+   so a full-size camera photo (often 4-8 MB) becomes a small, fast upload
+   (roughly 100-300 KB) — this is what keeps you comfortably inside the
+   free storage/bandwidth limits. Returns a JPEG Blob. */
+function compressImage(file, maxDim, quality){
+  maxDim = maxDim || 1280; quality = quality || 0.72;
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read that file.'));
+    reader.onload = () => {
+      img.onerror = () => reject(new Error('That file doesn\'t look like a valid image.'));
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > maxDim || height > maxDim){
+          if(width > height){ height = Math.round(height * (maxDim/width)); width = maxDim; }
+          else { width = Math.round(width * (maxDim/height)); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Compression failed.')), 'image/jpeg', quality);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadChatPhoto(file){
+  if(!file.type || !file.type.startsWith('image/')){
+    toast('Only photos can be shared here.');
+    return null;
+  }
+  const blob = await compressImage(file);
+  const myId = state.authUser.id;
+  const path = `${myId}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+  const { error } = await sb.storage.from('chat-images').upload(path, blob, { contentType:'image/jpeg', upsert:false });
+  if(error){ toast('Photo upload failed: '+error.message); return null; }
+  const { data } = sb.storage.from('chat-images').getPublicUrl(path);
+  return data ? data.publicUrl : null;
+}
+
+/* ---------------- report / block ---------------- */
+async function submitReport(reportedId, reason, details){
+  const myId = state.authUser.id;
+  const { error } = await sb.from('reports').insert({ reporter: myId, reported: reportedId, reason, details, status:'open' });
+  if(error){ toast('Could not submit report: '+error.message); return; }
+  toast('Report submitted. Our team will review it.');
+}
+async function toggleBlock(targetId){
+  const myId = state.authUser.id;
+  if(state.blocks.includes(targetId)){
+    await sb.from('blocks').delete().eq('blocker', myId).eq('blocked', targetId);
+  } else {
+    await sb.from('blocks').insert({ blocker: myId, blocked: targetId });
+  }
+  await loadAllData(); render();
+}
+
+/* =========================================================
+   RENDER  (structure mirrors the RECIRCLE feature set)
+   ========================================================= */
+function render(){
+  const app = document.getElementById('app');
+  if(!CONFIGURED){ app.innerHTML = renderNotConfigured(); return; }
+  if(!state.authUser){ app.innerHTML = renderAuth(); bindAuthEvents(); return; }
+  if(state.view==='onboarding'){ app.innerHTML = renderOnboarding(); bindOnboardingEvents(); return; }
+  if(state.view==='admin'){ app.innerHTML = renderAdminDashboard(); bindAdminDashboardEvents(); return; }
+  app.innerHTML = renderShell(); bindShellEvents();
+  requestAnimationFrame(adjustMobileLayout);
+}
+
+/* Measures REAL rendered heights on this exact device/browser instead of
+   guessing fixed pixel numbers — fixes short-screen phones and browsers
+   whose own address bar / toolbar eat unpredictable amounts of space. */
+function adjustMobileLayout(){
+  const bottomnav = document.querySelector('.bottom-nav');
+  const contentEl = document.querySelector('.content');
+  const topnav = document.querySelector('.topnav');
+  const isMobileNav = bottomnav && getComputedStyle(bottomnav).display !== 'none';
+
+  // 1) Make sure page content always clears the fixed bottom tab bar,
+  //    using its REAL height rather than an assumed one.
+  if(contentEl){
+    if(isMobileNav){
+      const bnH = bottomnav.getBoundingClientRect().height;
+      contentEl.style.paddingBottom = (bnH + 28) + 'px';
+    } else {
+      contentEl.style.paddingBottom = '';
+    }
+  }
+
+  // 2) Size the chat panel to whatever space is ACTUALLY left on screen,
+  //    accounting for the browser's own toolbars via visualViewport when
+  //    available (most accurate signal for "how tall is my screen really").
+  const shell = document.querySelector('.chat-shell');
+  if(shell){
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const topH = topnav ? topnav.getBoundingClientRect().height : 0;
+    const bnH = isMobileNav ? bottomnav.getBoundingClientRect().height : 0;
+    const contentPadTop = contentEl ? parseFloat(getComputedStyle(contentEl).paddingTop)||0 : 0;
+    const available = vh - topH - bnH - contentPadTop - 20;
+    shell.style.height = Math.max(280, available) + 'px';
+  }
+}
+function renderNotConfigured(){
+  return `<div class="auth-wrap"><div class="auth-box">
+    <div class="auth-hero"><h1>Almost there</h1><p>Connect RECIRCLE to your Supabase project to bring it to life.</p></div>
+    <div class="card card-shadow">
+      <p style="font-size:13.5px;color:var(--ink-soft);">Open <code>index.html</code> and replace the two placeholder values near the top of the &lt;script&gt; tag:</p>
+      <pre style="background:var(--bg);border-radius:10px;padding:12px;font-size:12.5px;overflow-x:auto;">const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";</pre>
+      <p style="font-size:13px;color:var(--ink-faint);">See SETUP_GUIDE.md for exactly where to find these in your Supabase project.</p>
+    </div>
+  </div></div>`;
+}
+
+const NAV_ITEMS = [
+  { id:'home', label:'Home', emoji:'🏠' },
+  { id:'discover', label:'Discover', emoji:'🔎' },
+  { id:'founderGuide', label:'Founder Guide', emoji:'✨' },
+  { id:'cofounderDashboard', label:'Co-Founders', emoji:'🚀' },
+  { id:'circle', label:'My Circle', emoji:'⭐' },
+  { id:'teams', label:'Teams', emoji:'🛠️' },
+  { id:'chatList', label:'Messages', emoji:'💬' },
+];
+// Mobile's bottom bar is cramped real estate — only the most-used
+// destinations get a fixed slot there. Everything else (plus Profile)
+// lives one tap away behind "More". Desktop's top nav still shows
+// everything in NAV_ITEMS directly, unaffected by this.
+const MOBILE_PRIMARY_NAV_IDS = ['home','discover','founderGuide','chatList'];
+function logoSvg(size){
+  size=size||30;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="16" cy="20" r="12" fill="#0E8C7F"/><circle cx="26" cy="16" r="10" fill="#FF6B4A" fill-opacity="0.88"/>
+  </svg>`;
+}
+
+/* ---------- Founder Guide: support, team formation, and safe escalation ---------- */
+function guideText(text){ return esc(text||'').replace(/\n/g,'<br>'); }
+function guideMessage(role, text, actions){ return { role, text, actions:actions||[] }; }
+const COFOUNDER_QUESTIONS = [
+  {key:'problem', question:'1 of 6 — What real problem do you care enough to work on for the next year? Who has it?'},
+  {key:'commitment', question:'2 of 6 — How much time can you consistently commit each week for the next three months?'},
+  {key:'strengths', question:'3 of 6 — What are your strongest contributions: product, design, engineering, sales, research, community, or something else?'},
+  {key:'neededSkills', question:'4 of 6 — Which strengths do you need beside you? Name skills or responsibilities you do not want to own alone.'},
+  {key:'workingStyle', question:'5 of 6 — How do you prefer to make decisions and handle disagreement in a team?'},
+  {key:'test', question:'6 of 6 — What small 7-day project could you and a potential co-founder do together before committing?'}
+];
+function ensureFounderGuide(){
+  if(state.aiMessages.length) return;
+  state.aiMessages = [guideMessage('assistant', `Hi — I’m Ria. You can vent here, think through a friendship or a hard week, find people to build with, or turn an idea into a team. What would help most today?`, [
+    ['checkin','I need to talk'], ['cofounder','Co-founder interview'], ['team','Build a team'], ['plan','Choose my next step']
+  ])];
+}
+function startCofounderInterview(){
+  state.cofounderStep=0; state.cofounderAnswers={};
+  state.aiMessages.push(guideMessage('assistant', `Let’s find a co-founder through the questions that matter in a real partnership: mission, commitment, complementary strengths, working style, and a small test project. There are no perfect answers — just answer honestly.\n\n${COFOUNDER_QUESTIONS[0].question}`));
+  render();
+}
+function continueCofounderInterview(answer){
+  const question=COFOUNDER_QUESTIONS[state.cofounderStep];
+  state.cofounderAnswers[question.key]=answer;
+  state.cofounderStep++;
+  if(state.cofounderStep<COFOUNDER_QUESTIONS.length){
+    state.aiMessages.push(guideMessage('assistant',COFOUNDER_QUESTIONS[state.cofounderStep].question));
+  }else{
+    const b=state.cofounderAnswers;
+    state.aiMessages.push(guideMessage('assistant',`Your co-founder brief is ready. You are exploring “${b.problem}”, can commit “${b.commitment}”, and want a partner who brings “${b.neededSkills}”.\n\nI've posted this to the co-founder board so others looking for a partner can see it, and I'll let you know the moment someone looks like a strong match. Before making a long-term promise, invite someone to your 7-day test: “${b.test}”`, [['cofounder','Refresh my matches'],['team','Create a team post']]));
+    state.cofounderStep=null;
+    saveCofounderProfileAndMatch();
+  }
+}
+
+/* ---------- Co-founder board: persistent "looking" status + mutual likes (Tinder-style match) ---------- */
+async function saveCofounderProfileAndMatch(){
+  const myId = state.authUser.id;
+  const b = state.cofounderAnswers;
+  const { error } = await sb.from('cofounder_profiles').upsert({
+    user_id: myId, problem:b.problem||'', commitment:b.commitment||'', strengths:b.strengths||'',
+    needed_skills:b.neededSkills||'', working_style:b.workingStyle||'', test_project:b.test||'',
+    looking:true, updated_at:new Date().toISOString()
+  });
+  if(error){ console.error('Could not save co-founder profile', error); return; }
+  await loadCofounderProfiles();
+  render();
+}
+async function loadCofounderProfiles(){
+  const { data } = await sb.from('cofounder_profiles').select('*');
+  state.cofounderProfiles = {};
+  (data||[]).forEach(row => { state.cofounderProfiles[row.user_id] = row; });
+}
+function keywordOverlap(a, b){
+  const words = s => (s||'').toLowerCase().match(/[a-z]{4,}/g) || [];
+  const wa = new Set(words(a)), wb = words(b);
+  return wb.filter(w => wa.has(w)).length;
+}
+function cofounderCompatibility(mineRow, otherRow, otherProfile){
+  if(!mineRow || !otherRow) return { score:0, reasons:[] };
+  let score = 0; const reasons = [];
+  const skillHit = keywordOverlap(mineRow.needed_skills, otherRow.strengths);
+  if(skillHit){ score += skillHit*6; reasons.push(`@${otherProfile.username} brings what you said you need`); }
+  const skillHitReverse = keywordOverlap(otherRow.needed_skills, mineRow.strengths);
+  if(skillHitReverse){ score += skillHitReverse*6; reasons.push(`You bring what @${otherProfile.username} is looking for`); }
+  const problemOverlap = keywordOverlap(mineRow.problem, otherRow.problem);
+  if(problemOverlap){ score += problemOverlap*3; reasons.push('Working on a related problem space'); }
+  const myChipSkills = (state.me.skills||[]), myChipInterests = (state.me.interests||[]);
+  const otherChipSkills = (otherProfile.skills||[]), otherChipInterests = (otherProfile.interests||[]);
+  score += myChipInterests.filter(x=>otherChipInterests.includes(x)).length * 2;
+  score += otherChipSkills.filter(x=>!myChipSkills.includes(x)).length;
+  return { score, reasons: reasons.slice(0,2) };
+}
+function topCofounderMatches(limit){
+  const myId = state.authUser.id;
+  const mine = state.cofounderProfiles[myId];
+  if(!mine) return [];
+  return Object.entries(state.cofounderProfiles)
+    .filter(([uid,row]) => uid!==myId && row.looking && state.profiles[uid] && !state.blocks.includes(uid))
+    .map(([uid,row]) => ({ profile: state.profiles[uid], ...cofounderCompatibility(mine, row, state.profiles[uid]) }))
+    .sort((a,b)=>b.score-a.score)
+    .slice(0, limit||5);
+}
+function isMutualCofounderMatch(myId, otherId){
+  const likes = state.cofounderLikes||[];
+  return likes.some(l=>l.liker===myId && l.liked===otherId) && likes.some(l=>l.liker===otherId && l.liked===myId);
+}
+async function alreadyNotifiedMatch(myId, otherUsername){
+  const { data } = await sb.from('notifications').select('id').eq('user_id', myId).eq('type','cofounder_match').ilike('body', `%@${otherUsername}%`).limit(1);
+  return !!(data && data.length);
+}
+async function likeCofounder(otherId){
+  const myId = state.authUser.id;
+  const other = state.profiles[otherId];
+  if(!other) return;
+  const { error } = await sb.from('cofounder_likes').insert({ liker: myId, liked: otherId });
+  if(error && !String(error.message||'').toLowerCase().includes('duplicate')){ toast('Could not send interest: '+error.message); return; }
+  state.cofounderLikes = state.cofounderLikes||[];
+  if(!state.cofounderLikes.some(l=>l.liker===myId && l.liked===otherId)) state.cofounderLikes.push({liker:myId, liked:otherId});
+  const { data: theirLike } = await sb.from('cofounder_likes').select('id').eq('liker', otherId).eq('liked', myId).limit(1);
+  if(theirLike && theirLike.length){
+    await sb.from('notifications').insert({ user_id: otherId, type:'cofounder_match', body:`🎉 It's a match! You and @${state.me.username} are both interested in co-founding together.` });
+    showMatchOverlay(otherId, 'cofounder');
+  } else {
+    toast(`You're interested in @${other.username}. If they're interested too, you'll both be notified — it's a match!`);
+    render();
+  }
+}
+function hasLiked(myId, otherId){
+  return (state.cofounderLikes||[]).some(l=>l.liker===myId && l.liked===otherId);
+}
+function founderCandidates(){
+  const me = state.me||{};
+  const myInterests = me.interests||[], mySkills = me.skills||[];
+  return Object.values(state.profiles).filter(u=>u.id!==state.authUser.id && !u.suspended && !state.blocks.includes(u.id)).map(u=>{
+    const sharedInterests = (u.interests||[]).filter(x=>myInterests.includes(x));
+    const complementarySkills = (u.skills||[]).filter(x=>!mySkills.includes(x));
+    let score = sharedInterests.length*4 + complementarySkills.length;
+    if((u.looking_for||[]).includes('Startup')) score+=5;
+    if((u.interests||[]).includes('Entrepreneurship')) score+=3;
+    if((u.goals||'').trim() && (me.goals||'').trim()) score+=2;
+    const needText=(state.cofounderAnswers.neededSkills||'').toLowerCase();
+    if(needText && (u.skills||[]).some(skill=>needText.includes(String(skill).toLowerCase()))) score+=8;
+    return {u, score, sharedInterests, complementarySkills};
+  }).sort((a,b)=>b.score-a.score || a.u.username.localeCompare(b.u.username)).slice(0,4);
+}
+function founderMatchReason(match){
+  if(match.sharedInterests.length) return `Shared: ${match.sharedInterests.slice(0,2).join(', ')}`;
+  if(match.complementarySkills.length) return `Could add: ${match.complementarySkills.slice(0,2).join(', ')}`;
+  return 'Open to building and connecting';
+}
+function isCrisisText(text){
+  return /\b(suicid(e|al)|kill myself|end my life|want to die|don't want to live|hurt myself|self[- ]?harm|cut myself|overdose|harm someone)\b/i.test(text||'');
+}
+function isGreeting(text){
+  return /^\s*(hi+|hey+|hello+|yo+|sup|what'?s up|good (morning|afternoon|evening)|namaste|hola)\s*[!.?]*\s*$/i.test(text||'');
+}
+function localGuideReply(text){
+  const t=(text||'').toLowerCase();
+  if(isGreeting(text)) return guideMessage('assistant', `Hey! Good to see you 🙂 What's going on — just want to chat, or looking to build something?`, [['checkin','I want to vent'],['cofounder','Find a co-founder'],['team','Build a team']]);
+  if(/create.*team|post.*team|need.*team|team.*member/.test(t)) return guideMessage('assistant', 'A good team post makes three things easy to understand: the problem you are solving, the commitment you need, and the roles that are missing. Start with a small first milestone, not a huge promise. I can take you to a guided team post now.', [['team','Create a guided team post'],['cofounder','Do the co-founder interview']]);
+  if(/co.?founder|team|partner|people/.test(t)) return guideMessage('assistant', 'Let’s make this practical. A strong founding pair usually shares the problem and values, while bringing different strengths. I’ve ranked people from Recircle below using shared interests, startup intent, and complementary skills.\n\nBefore you connect, send a short note: “I’m exploring [problem]. I can contribute [strength]. Would you be open to a 20-minute call this week?”', [['cofounder','Show my matches'],['goal','Help me write my founder brief']]);
+  if(/plan|stuck|procrast|next step|goal/.test(t)) return guideMessage('assistant', 'You do not need to solve the whole startup today. Choose one outcome you can finish in 25 minutes: write the user problem in one sentence, message one potential user, or invite one possible teammate. Which one feels most doable?', [['goal','Write a founder brief'],['cofounder','Find a collaborator']]);
+  if(/stress|overwhelm|burn|anxious|fail|alone|tired|sad/.test(t)) return guideMessage('assistant', 'That sounds like a lot to carry. You do not have to earn rest by finishing everything first. For the next ten minutes, try one small reset: drink water, step away from the screen, or message a person you trust.\n\nFor your work, let’s reduce the pressure: what is the smallest next action that would make today feel 1% lighter?', [['plan','Choose one small step'],['crisis','Get urgent help']]);
+  if(/brief|idea|problem/.test(t)) return guideMessage('assistant', 'Great — use this simple founder brief: “We are helping [specific people] who struggle with [specific problem] by [approach]. This week I will test it by [one action].” Send me a rough version and I’ll help make it clearer.', [['cofounder','Find people for this idea'],['plan','Make a one-week plan']]);
+  return guideMessage('assistant', 'I’m with you. Tell me what you are trying to build, what feels difficult right now, or the kind of person you hope to meet. We can turn it into one calm, concrete next step.', [['checkin','Do a check-in'],['cofounder','Find a co-founder'],['plan','Plan my next step']]);
+}
+async function askFounderGuide(text){
+  text=(text||'').trim(); if(!text || state.aiBusy) return;
+  ensureFounderGuide();
+  state.aiMessages.push(guideMessage('user',text));
+  if(state.cofounderStep!==null){ continueCofounderInterview(text); render(); return; }
+  if(isGreeting(text)){ state.aiMessages.push(localGuideReply(text)); render(); return; }
+  const localRiskSignal=isCrisisText(text);
+  if(localRiskSignal) state.crisisPanelOpen=true;
+  state.aiBusy=true; render();
+  let reply=null;
+  try{
+    const { data:{session} } = await sb.auth.getSession();
+    const payload={
+      messages: state.aiMessages.slice(-8).map(m=>({role:m.role,content:m.text})),
+      profile: { interests:state.me.interests||[], skills:state.me.skills||[], goals:state.me.goals||'', lookingFor:state.me.looking_for||[] },
+      candidates: founderCandidates().map(m=>({username:m.u.username,interests:m.u.interests||[],skills:m.u.skills||[],lookingFor:m.u.looking_for||[],goals:m.u.goals||''})),
+      cofounderBrief: state.cofounderAnswers,
+      teams: state.teams.filter(t=>t.status==='open').slice(0,12).map(t=>({title:t.title,type:t.type,skillsNeeded:t.skills_needed||[],description:t.description||''}))
+    };
+    const response=await fetch(FOUNDER_GUIDE_API_URL,{method:'POST',headers:{'Content-Type':'application/json', ...(session?{Authorization:`Bearer ${session.access_token}`}:{})},body:JSON.stringify(payload)});
+    if(response.ok){ const data=await response.json(); if(data && typeof data.reply==='string'){ if(data.crisis) state.crisisPanelOpen=true; if(data.teamDraft && typeof data.teamDraft==='object') state.lastTeamDraft=data.teamDraft; reply=guideMessage('assistant',data.reply,data.crisis?[['crisis','Safety & Support']]:(data.teamDraft?[['team','Create a team post']]:[])); } }
+  }catch(e){ /* The local guide remains available when the server is unavailable. */ }
+  state.aiMessages.push(reply||(localRiskSignal
+    ? guideMessage('assistant','I’m really glad you said something. Please open Safety & Support now and contact someone you trust who can be with you.', [['crisis','Safety & Support']])
+    : localGuideReply(text)));
+  state.aiBusy=false; render();
+}
+function renderCrisisPanel(){
+  if(!state.crisisPanelOpen) return '';
+  return `<section class="crisis-panel" role="alert" aria-live="assertive">
+    <h3>You deserve real-time support right now.</h3>
+    <p>If you are in immediate danger or think you may act on thoughts of self-harm, call emergency services. In India, call <strong>112</strong>. You can also call <strong>Tele-MANAS: 14416</strong> or <strong>1800-891-4416</strong>, a free 24/7 mental-health helpline.</p>
+    <ol class="crisis-steps"><li>Move to a safer place, away from anything you could use to hurt yourself.</li><li>Call or sit with someone you trust; tell them plainly that you need support now.</li><li>Do not stay alone while the urge feels immediate.</li></ol>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;"><a class="btn btn-coral" href="tel:112">Call 112 now</a><a class="btn btn-primary" href="tel:14416">Call Tele-MANAS</a><button class="btn btn-outline" data-close-crisis>I'm safe for now</button></div>
+    <p style="font-size:12px;margin-bottom:0;">Outside India? Call your local emergency number or visit <a href="https://findahelpline.com/" target="_blank" rel="noopener">FindAHelpline</a> for a verified local service.</p>
+  </section>`;
+}
+function renderFounderGuide(){
+  ensureFounderGuide();
+  const matches=founderCandidates();
+  const myId = state.authUser.id;
+  const myCofounderRow = state.cofounderProfiles[myId];
+  const lookingCount = Object.entries(state.cofounderProfiles).filter(([uid,row])=>uid!==myId && row.looking).length;
+  const realMatches = myCofounderRow ? topCofounderMatches() : [];
+  return `<div>
+    <div class="hero-band"><div class="pill pill-violet" style="background:rgba(255,255,255,.14);color:#fff;">Founder support</div><h1 style="margin-top:10px;">Build with clarity. Don’t build alone.</h1><p>Ria helps you reflect, take a manageable next step, and meet potential collaborators from Recircle.</p></div>
+    ${renderCrisisPanel()}
+    <div class="guide-layout" style="margin-top:${state.crisisPanelOpen?'18':'0'}px;">
+      <section class="guide-card" aria-label="Chat with Ria">
+        <div class="guide-head"><div class="guide-orb">✨</div><div style="flex:1;"><div style="font-family:'Sora';font-weight:800;">Ria, your Recircle guide</div><div class="student-meta">Friendship · co-founder discovery · team building</div></div><button class="btn btn-ghost btn-sm" data-open-crisis>Safety & Support</button></div>
+        <div class="guide-chat" id="guideChat">${state.aiMessages.map(m=>`<div class="guide-msg ${m.role==='user'?'user':'assistant'}">${guideText(m.text)}</div>${m.actions&&m.actions.length?`<div class="guide-actions">${m.actions.map(a=>`<button class="guide-action" data-ai-action="${a[0]}">${a[1]}</button>`).join('')}</div>`:''}`).join('')}${state.aiBusy?'<div class="guide-msg assistant">Thinking with you…</div>':''}</div>
+        <div class="guide-input"><input id="guideInput" maxlength="800" placeholder="What’s on your mind or what are you building?" aria-label="Message Ria"><button class="btn btn-primary" id="guideSend" ${state.aiBusy?'disabled':''}>Send</button></div>
+      </section>
+      <aside class="guide-side">
+        ${myCofounderRow ? `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="margin:0;">🚀 Your co-founder matches</h3><button class="btn btn-ghost btn-sm" data-ai-action="cofounder">Refresh</button></div>
+          <p class="student-meta" style="margin:6px 0 2px;">You're visible on the co-founder board. ${lookingCount} other${lookingCount===1?'':'s'} currently looking.</p>
+          ${realMatches.length?realMatches.map(m=>`<div class="match-mini">${avatarHtml(m.profile.username,34)}<div class="match-mini-main"><div style="font-weight:700;font-size:13px;">@${esc(m.profile.username)}</div><div class="match-reason">${esc(m.reasons[0]||'Open to building and connecting')}</div></div>${hasLiked(myId,m.profile.id)?'<span class="pill pill-mint">👍 Interested</span>':`<button class="btn btn-outline btn-sm" data-cofounder-like="${m.profile.id}">👍 Interested</button>`}</div>`).join(''):'<p class="student-meta" style="margin-top:10px;">No strong matches yet — check back as more people join the board.</p>'}
+          <button class="btn btn-outline btn-sm btn-block" style="margin-top:10px;" data-nav="cofounderDashboard">View full dashboard →</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:6px;" id="stopLookingBtn">I'm no longer looking</button>
+        </div>` : `
+        <div class="card">
+          <h3 style="margin:0 0 6px;">🚀 Co-founder board</h3>
+          <p style="font-size:13px;line-height:1.45;color:var(--ink-soft);margin:0 0 12px;">${lookingCount>0?`${lookingCount} student${lookingCount===1?' is':'s are'} actively looking for a co-founder right now.`:'Be the first to post that you\'re looking for a co-founder.'} Take the 6-question interview so Ria can match you against everyone else on the board.</p>
+          <button class="btn btn-primary btn-sm btn-block" data-ai-action="cofounder">Take the interview</button>
+        </div>`}
+        <div class="card"><div class="pill">Your next move</div><h3 style="margin:10px 0 6px;">A small step counts.</h3><p style="font-size:13px;line-height:1.45;color:var(--ink-soft);margin:0 0 12px;">Vent, make a friend, validate a problem, or create a team. Ria adapts to your profile, connections, and open teams.</p><button class="btn btn-outline btn-sm" data-ai-action="plan">Make a 25-minute plan</button></div>
+        <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><h3 style="margin:0;">Potential co-founders</h3><button class="btn btn-ghost btn-sm" data-nav="discover">See all</button></div><p class="student-meta" style="margin:6px 0 2px;">Based on visible interests, skills, and startup intent.</p>${matches.length?matches.map(m=>`<div class="match-mini">${avatarHtml(m.u.username,34)}<div class="match-mini-main"><div style="font-weight:700;font-size:13px;">@${esc(m.u.username)}</div><div class="match-reason">${esc(founderMatchReason(m))}</div></div><button class="btn btn-outline btn-sm" data-ai-connect="${m.u.id}">Connect</button></div>`).join(''):'<p class="student-meta" style="margin-top:14px;">Add your interests and goals to unlock better matches.</p>'}</div>
+        <div class="card"><h3 style="margin:0 0 7px;">Your privacy</h3><p style="font-size:12.5px;line-height:1.45;color:var(--ink-soft);margin:0;">Founder Guide chats are not saved in Recircle. The co-founder board only shares your problem statement and needed skills — never this chat — with other students, and only while "looking" is on. Serious safety-risk signals may create a private review case for designated admins; this is disclosed in Safety & Support.</p></div>
+      </aside>
+    </div>
+  </div>`;
+}
+
+function renderCofounderDashboard(){
+  const myId = state.authUser.id;
+  const mine = state.cofounderProfiles[myId];
+  const lookingCount = Object.entries(state.cofounderProfiles).filter(([uid,row])=>uid!==myId && row.looking).length;
+
+  if(!mine){
+    return `<div>
+      <div class="hero-band"><h1>🚀 Co-Founder Dashboard</h1><p>Your personalized, ranked list of the strongest potential co-founders on Recircle.</p></div>
+      <div class="empty-state"><div class="e-icon">🚀</div><h3>You're not on the board yet</h3><p>${lookingCount>0?`${lookingCount} other student${lookingCount===1?' is':'s are'} already looking for a co-founder.`:'Be the first to post that you\'re looking for one.'} Take Ria's 6-question interview to see your ranked matches here.</p><div style="margin-top:16px;"><button class="btn btn-primary" data-nav="founderGuide">Talk to Ria</button></div></div>
+    </div>`;
+  }
+
+  const allMatches = topCofounderMatches(50);
+  return `<div>
+    <div class="hero-band"><h1>🚀 Co-Founder Dashboard</h1><p>Ranked by real compatibility — what you said you need vs. what they bring, and back again. Ria also scans automatically in the background and will notify you when someone new and promising shows up.</p></div>
+    <div class="card" style="margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div><div style="font-weight:700;">You're visible on the board</div><div class="student-meta">Looking for: “${esc(mine.problem||'')}”</div></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" data-nav="founderGuide">Update my answers</button>
+        <button class="btn btn-ghost btn-sm" id="stopLookingBtnDash">I'm no longer looking</button>
+      </div>
+    </div>
+    ${allMatches.length===0?`<div class="empty-state"><div class="e-icon">🧭</div><h3>No matches yet</h3><p>${lookingCount===0?'You\'re the only one on the board right now — check back as more people join.':'No strong matches yet — check back soon.'}</p></div>`:`
+    <div class="grid">
+      ${allMatches.map((m,i)=>{
+        const mutual = isMutualCofounderMatch(myId, m.profile.id);
+        const liked = hasLiked(myId, m.profile.id);
+        return `<div class="student-card">
+          <div class="student-top">${avatarHtml(m.profile.username,44)}<div style="flex:1;"><div class="student-name">@${esc(m.profile.username)}</div><div class="student-meta">${esc(m.profile.department||'')} • ${esc(m.profile.year||'')}</div></div><span class="pill pill-violet">#${i+1} · score ${m.score}</span></div>
+          <div class="shared-note">${m.reasons.length?m.reasons.map(esc).join(' · '):'Compatible goals and skills'}</div>
+          <div class="tag-row">${(m.profile.skills||[]).slice(0,4).map(s=>`<span class="pill">${esc(s)}</span>`).join('')}</div>
+          ${mutual ? `<span class="pill pill-mint" style="align-self:flex-start;">🎉 Matched — say hello!</span><button class="btn btn-primary btn-sm btn-block" data-nav-chat="${m.profile.id}">💬 Message</button>`
+            : liked ? `<button class="btn btn-outline btn-sm btn-block" disabled>👍 Interest sent</button>`
+            : `<button class="btn btn-coral btn-sm btn-block" data-cofounder-like="${m.profile.id}">👍 I'm interested</button>`}
+        </div>`;
+      }).join('')}
+    </div>`}
+  </div>`;
+}
+
+function renderShell(){
+  const myId = state.authUser.id;
+  const pendingCount = state.requests.filter(r=>r.to_user===myId && r.status==='pending').length;
+  let body='';
+  if(state.view==='home') body=renderHome();
+  else if(state.view==='discover') body=renderDiscover();
+  else if(state.view==='founderGuide') body=renderFounderGuide();
+  else if(state.view==='cofounderDashboard') body=renderCofounderDashboard();
+  else if(state.view==='circle') body=renderCircle();
+  else if(state.view==='teams') body=renderTeams();
+  else if(state.view==='chatList') body=renderChatList();
+  else if(state.view==='chatThread') body=renderChatThreadView();
+  else if(state.view==='notifications') body=renderNotifications();
+  else if(state.view==='profile') body=renderProfile(myId, true);
+  else if(state.view==='viewProfile') body=renderProfile(state.viewingProfile, false);
+  else if(state.view==='privacy') body=renderPrivacy();
+  else body=renderHome();
+
+  return `
+  <div class="shell">
+    <div class="topnav">
+      <div class="brand">${logoSvg(28)}<span class="brand-name">RECIRCLE</span></div>
+      <nav class="topnav-links">
+        ${NAV_ITEMS.map(n=>`<button class="nav-item ${state.view===n.id?'active':''}" data-nav="${n.id}"><span>${n.emoji}</span>${n.label}</button>`).join('')}
+        <button class="nav-item ${state.view==='notifications'?'active':''}" data-nav="notifications"><span>🔔</span>Notifications${pendingCount>0?`<span class="nav-badge">${pendingCount}</span>`:''}</button>
+      </nav>
+      <div class="topnav-right">
+        ${state.me && state.me.is_admin ? `<button class="btn btn-outline btn-sm" data-nav="admin">Admin</button>`:''}
+        <button class="icon-btn hide-on-mobile" data-nav="privacy" title="Privacy Center">🔒</button>
+        <button data-nav="profile" style="border:none;background:none;padding:0;">${avatarHtml(state.me?state.me.username:'?',34)}</button>
+        <button class="btn btn-ghost btn-sm hide-on-mobile" data-action="logout">Log out</button>
+      </div>
+    </div>
+    <div class="main"><div class="content">${body}</div></div>
+    <nav class="bottom-nav">
+      ${NAV_ITEMS.filter(n=>MOBILE_PRIMARY_NAV_IDS.includes(n.id)).map(n=>`<button class="bn-item ${state.view===n.id?'active':''}" data-nav="${n.id}"><span class="emoji">${n.emoji}</span>${n.label}</button>`).join('')}
+      <button class="bn-item ${['cofounderDashboard','circle','teams','profile'].includes(state.view)?'active':''}" id="moreNavBtn"><span class="emoji">⋯</span>More</button>
+    </nav>
+  </div>
+  `;
+}
+
+function renderMoreSheet(){
+  const extraItems = [
+    ...NAV_ITEMS.filter(n=>!MOBILE_PRIMARY_NAV_IDS.includes(n.id)),
+    { id:'profile', label:'Profile', emoji:'👤' }
+  ];
+  return `<div class="modal-bg" id="moreSheetBg">
+    <div class="modal-box" style="padding:10px;max-width:340px;">
+      ${extraItems.map(n=>`<button class="switch-row" style="width:100%;border:none;background:none;text-align:left;cursor:pointer;padding:14px 10px;" data-more-nav="${n.id}"><span style="font-size:18px;margin-right:12px;">${n.emoji}</span><span style="font-weight:600;">${n.label}</span></button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderFriendsNowOverlay(){
+  const otherName = pName(state.friendsNowTarget);
+  const isCofounder = state.matchOverlayMode === 'cofounder';
+  const alreadyConnected = isConnected(state.authUser.id, state.friendsNowTarget);
+  return `
+  <div class="fn-overlay" id="fnOverlay">
+    <div class="fn-card">
+      <div class="fn-emoji">${isCofounder?'🚀':'🎉'}</div>
+      <div class="fn-title">${isCofounder?"It's a Match! 🚀":'Friends Now! 🤝'}</div>
+      <div class="fn-sub">${isCofounder?`You and @${esc(otherName)} are both interested in co-founding together.`:`You and @${esc(otherName)} are now connected.`}</div>
+      <div class="fn-steps">${isCofounder?`<div class="fn-step">🚀 Mutual co-founder interest</div><div class="fn-step">${alreadyConnected?'💬 Say hello and talk it through':'🤝 Connect to start the conversation'}</div>`:`<div class="fn-step">⭐ Added to My Circle</div><div class="fn-step">💬 Say hello and start the conversation</div>`}</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline btn-block" id="fnClose">Later</button>
+        <button class="btn btn-primary btn-block" id="fnSayHello">${alreadyConnected?'Say Hello':'Connect'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const myId = state.authUser.id;
+  const pendingCount = state.requests.filter(r=>r.to_user===myId && r.status==='pending').length;
+  const openProjects = state.teams.filter(t=>t.type==='project' && t.status==='open').length;
+  const openHack = state.teams.filter(t=>t.type==='hackathon' && t.status==='open').length;
+  const openStartup = state.teams.filter(t=>t.type==='startup' && t.status==='open').length;
+  const totalUsers = Object.keys(state.profiles).length;
+  const teamsCreatedRecently = state.teams.filter(t=>Date.now()-new Date(t.created_at).getTime() < 7*86400000).length;
+
+  return `
+  <div class="hero-band">
+    <h1>👋 Welcome back, @${esc(state.me.username)}</h1>
+    <p>Find people. Build things. Grow together.</p>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+    <div class="stat-card card-shadow" style="background:linear-gradient(135deg,#0E8C7F,#12B39F);cursor:pointer;" data-nav="discover"><div class="sc-icon">🔎</div><h3>Find your people</h3><p>${totalUsers} student${totalUsers===1?'':'s'} on campus to discover</p></div>
+    <div class="stat-card card-shadow" style="background:linear-gradient(135deg,#FF6B4A,#FF8F6E);cursor:pointer;" data-nav="notifications"><div class="sc-icon">🤝</div><h3>${pendingCount} connection request${pendingCount===1?'':'s'}</h3><p>${pendingCount>0?'People want to connect with you':"You're all caught up"}</p></div>
+    <div class="stat-card card-shadow" style="background:linear-gradient(135deg,#7C6CF0,#9B8FF7);cursor:pointer;" data-nav="teams"><div class="sc-icon">🛠️</div><h3>${openProjects} project${openProjects===1?'':'s'}</h3><p>Looking for teammates right now</p></div>
+    <div class="stat-card card-shadow" style="background:linear-gradient(135deg,#FFB238,#FFC873);cursor:pointer;" data-nav="teams"><div class="sc-icon">🏆</div><h3>${openHack} hackathon team${openHack===1?'':'s'}</h3><p>${openStartup} startup${openStartup===1?'':'s'} building too</p></div>
+  </div>
+  <div class="section-head"><h2>🌱 Campus Pulse</h2></div>
+  <div class="card" style="display:flex;gap:26px;flex-wrap:wrap;">
+    <div><div style="font-family:'Sora';font-size:22px;font-weight:800;">${totalUsers}</div><div style="color:var(--ink-faint);font-size:12.5px;">students joined</div></div>
+    <div><div style="font-family:'Sora';font-size:22px;font-weight:800;">${state.connections.length}</div><div style="color:var(--ink-faint);font-size:12.5px;">connections made</div></div>
+    <div><div style="font-family:'Sora';font-size:22px;font-weight:800;">${teamsCreatedRecently}</div><div style="color:var(--ink-faint);font-size:12.5px;">teams created this week</div></div>
+  </div>`;
+}
+
+/* ---------- DISCOVER ---------- */
+function renderDiscover(){
+  const myId = state.authUser.id;
+  const f = state.discoverFilters;
+  let list = Object.values(state.profiles).filter(u=>u.id!==myId && !u.suspended && !state.blocks.includes(u.id));
+  if(f.dept) list = list.filter(u=>u.department===f.dept);
+  if(f.year) list = list.filter(u=>u.year===f.year);
+  if(f.interest) list = list.filter(u=>(u.interests||[]).includes(f.interest));
+  if(f.lookingFor) list = list.filter(u=>(u.looking_for||[]).includes(f.lookingFor));
+  if(f.q) list = list.filter(u=>u.username.includes(f.q.toLowerCase()) || (u.bio||'').toLowerCase().includes(f.q.toLowerCase()));
+  list.sort((a,b)=>sharedInterests(myId,b.id).length - sharedInterests(myId,a.id).length);
+
+  return `
+  <div>
+    <div class="card" style="margin-bottom:18px;">
+      <div class="field" style="margin-bottom:12px;"><input type="text" id="searchQ" placeholder="Search by name or bio…" value="${esc(f.q)}"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+        <select id="filterDept"><option value="">All Departments</option>${DEPARTMENTS.map(d=>`<option ${f.dept===d?'selected':''}>${d}</option>`).join('')}</select>
+        <select id="filterYear"><option value="">All Years</option>${YEARS.map(y=>`<option ${f.year===y?'selected':''}>${y}</option>`).join('')}</select>
+        <select id="filterInterest"><option value="">Any Interest</option>${INTEREST_OPTIONS.map(i=>`<option ${f.interest===i?'selected':''}>${i}</option>`).join('')}</select>
+        <select id="filterLooking"><option value="">Looking for anything</option>${LOOKING_FOR_OPTIONS.map(i=>`<option ${f.lookingFor===i?'selected':''}>${i}</option>`).join('')}</select>
+      </div>
+    </div>
+    ${list.length===0 ? `<div class="empty-state"><div class="e-icon">🧭</div><h3>No students match yet</h3><p>Try widening your filters, or invite more classmates to join RECIRCLE.</p></div>` :
+    `<div class="grid">${list.map(u=>renderStudentCard(u)).join('')}</div>`}
+  </div>`;
+}
+function renderStudentCard(u){
+  const myId = state.authUser.id;
+  const shared = sharedInterests(myId,u.id);
+  const connected = isConnected(myId,u.id);
+  const pending = pendingRequestBetween(myId,u.id);
+  let btn;
+  if(connected) btn = `<button class="btn btn-outline btn-sm btn-block" data-nav-chat="${u.id}">💬 View & Chat</button>`;
+  else if(pending && pending.from_user===myId) btn = `<button class="btn btn-outline btn-sm btn-block" disabled>✓ Request Sent</button>`;
+  else if(pending && pending.to_user===myId) btn = `<button class="btn btn-mint btn-sm btn-block" data-respond="${pending.id}|1">Accept Request</button>`;
+  else btn = `<button class="btn btn-coral btn-sm btn-block" data-connect="${u.id}">+ Connect</button>`;
+  return `
+  <div class="student-card">
+    <div class="student-top" style="cursor:pointer;" data-view-profile="${u.id}">
+      ${avatarHtml(u.username,44)}
+      <div><div class="student-name">${esc(u.full_name||'@'+u.username)}</div><div class="student-meta">@${esc(u.username)} • ${esc(u.department)} • ${esc(u.year)}</div></div>
+    </div>
+    ${u.bio?`<div class="student-bio">${esc(u.bio.slice(0,110))}${u.bio.length>110?'…':''}</div>`:''}
+    <div class="tag-row">${(u.interests||[]).slice(0,4).map(i=>`<span class="pill">${esc(i)}</span>`).join('')}</div>
+    ${shared.length>0?`<div class="shared-note">✨ ${shared.length} shared interest${shared.length===1?'':'s'}: ${shared.slice(0,3).map(esc).join(', ')}</div>`:''}
+    ${btn}
+  </div>`;
+}
+
+/* ---------- CIRCLE ---------- */
+function renderCircle(){
+  const myId = state.authUser.id;
+  const conns = connectionsOf(myId);
+  if(conns.length===0) return `<div class="empty-state"><div class="e-icon">⭐</div><h3>Your circle is empty — for now</h3><p>Head to Discover and send your first connection request.</p><div style="margin-top:16px;"><button class="btn btn-primary" data-nav="discover">Find your people</button></div></div>`;
+  const cats = {};
+  state.connections.filter(c=>c.user_a===myId||c.user_b===myId).forEach(c=>{ const other=c.user_a===myId?c.user_b:c.user_a; const cat=c.category||'Friends'; (cats[cat]=cats[cat]||[]).push(other); });
+  return `<div>${Object.entries(cats).map(([cat,people])=>`
+    <div class="section-head"><h2>${categoryEmoji(cat)} ${esc(cat)} <span style="color:var(--ink-faint);font-weight:500;font-size:13px;">(${people.length})</span></h2></div>
+    <div class="grid">${people.map(id=>{
+      const u = state.profiles[id]||{username:'?'};
+      const shared = sharedInterests(myId,id);
+      return `<div class="student-card">
+        <div class="student-top" style="cursor:pointer;" data-view-profile="${id}">${avatarHtml(u.username,44)}<div><div class="student-name">@${esc(u.username)}</div><div class="student-meta">${esc(u.department||'')} • ${esc(u.year||'')}</div></div></div>
+        ${shared.length>0?`<div class="shared-note">✨ ${shared.length} shared interest${shared.length===1?'':'s'}</div>`:''}
+        <button class="btn btn-primary btn-sm btn-block" data-nav-chat="${id}">💬 Message</button>
+      </div>`;
+    }).join('')}</div>`).join('')}</div>`;
+}
+function categoryEmoji(cat){ return { Friends:'🤝', Study:'📚', Projects:'🛠️', Competition:'🏆', Startup:'🚀' }[cat] || '⭐'; }
+
+/* ---------- TEAMS ---------- */
+function renderTeams(){
+  const myId = state.authUser.id;
+  const teams = state.teams;
+  const typeColor = { project:'pill', hackathon:'pill-coral', startup:'pill-violet' };
+  const typeLabel = { project:'🛠️ Project', hackathon:'🏆 Hackathon', startup:'🚀 Startup' };
+  return `
+  <div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;"><button class="btn btn-primary" id="openTeamForm">+ Post a team</button></div>
+    ${state.teamFormOpen ? renderTeamForm() : ''}
+    ${teams.length===0 ? `<div class="empty-state"><div class="e-icon">🛠️</div><h3>No teams yet</h3><p>Be the first to post a project, hackathon, or startup team.</p></div>` : `
+    <div class="grid">${teams.map(t=>{
+      const isMember = t.members.includes(myId);
+      const isCreator = t.creator===myId;
+      const applied = (state._myApplications && state._myApplications[t.id]) || false;
+      return `<div class="student-card">
+        <span class="${typeColor[t.type]}" style="align-self:flex-start;">${typeLabel[t.type]}</span>
+        <div style="font-weight:700;font-size:15.5px;">${esc(t.title)}</div>
+        <div class="student-bio">${esc(t.description)}</div>
+        <div class="tag-row">${(t.skills_needed||[]).map(s=>`<span class="pill">${esc(s)}</span>`).join('')}</div>
+        <div class="student-meta">👥 ${t.members.length}/${t.size} members • by @${esc(pName(t.creator))}</div>
+        ${isCreator ? `<button class="btn btn-outline btn-sm btn-block" data-view-team="${t.id}">Manage team</button>`
+          : isMember ? `<button class="btn btn-outline btn-sm btn-block" disabled>✓ You're a member</button>`
+          : applied ? `<button class="btn btn-outline btn-sm btn-block" disabled>✓ Application sent</button>`
+          : t.status!=='open' ? `<button class="btn btn-outline btn-sm btn-block" disabled>Closed</button>`
+          : `<button class="btn btn-coral btn-sm btn-block" data-apply-team="${t.id}">Request to Join</button>`}
+      </div>`;
+    }).join('')}</div>`}
+    ${state.viewingTeam ? renderTeamManageModal() : ''}
+  </div>`;
+}
+function buildTeamDraftFromGuide(){
+  const fromAi = state.lastTeamDraft;
+  if(fromAi && (fromAi.title || fromAi.description)) return fromAi;
+  const b = state.cofounderAnswers;
+  if(!b || !b.problem) return null;
+  const skillsNeeded = SKILL_OPTIONS.filter(s => (b.neededSkills||'').toLowerCase().includes(s.toLowerCase()));
+  return {
+    title: b.problem.length>60 ? b.problem.slice(0,57)+'…' : b.problem,
+    description: `${b.problem}${b.test?` First milestone: ${b.test}`:''}`,
+    skillsNeeded,
+    size: 4
+  };
+}
+function renderTeamForm(){
+  const d = state.onboardData;
+  const draft = state.pendingTeamDraft;
+  if(!state.teamFormDraft){
+    state.teamFormDraft = {
+      title: (draft&&draft.title)||'', description: (draft&&draft.description)||'',
+      type: 'project', size: (draft&&draft.size)||4
+    };
+  }
+  const f = state.teamFormDraft;
+  return `<div class="card card-shadow" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Post a new team</h3>
+    ${draft?'<p class="student-meta" style="margin-top:-6px;">Drafted from your Founder Guide conversation — edit anything before posting.</p>':''}
+    <div class="field"><label>Type</label><select id="teamType"><option value="project" ${f.type==='project'?'selected':''}>🛠️ Project</option><option value="hackathon" ${f.type==='hackathon'?'selected':''}>🏆 Hackathon</option><option value="startup" ${f.type==='startup'?'selected':''}>🚀 Startup</option></select></div>
+    <div class="field"><label>Title</label><input id="teamTitle" placeholder="e.g. Smart Agriculture AI" value="${esc(f.title)}"></div>
+    <div class="field"><label>Description</label><textarea id="teamDesc" rows="3" placeholder="What are you building?">${esc(f.description)}</textarea></div>
+    <div class="field"><label>Skills needed</label><div class="chip-select" id="teamSkills">${SKILL_OPTIONS.map(s=>`<button type="button" class="chip ${d.skillsNeeded&&d.skillsNeeded.includes(s)?'selected':''}" data-skill="${s}">${s}</button>`).join('')}</div></div>
+    <div class="field"><label>Team size (including you)</label><input id="teamSize" type="number" min="2" max="20" value="${f.size}"></div>
+    <div style="display:flex;gap:10px;"><button class="btn btn-outline btn-block" id="cancelTeamForm">Cancel</button><button class="btn btn-primary btn-block" id="submitTeamForm">Post team</button></div>
+  </div>`;
+}
+function renderTeamManageModal(){
+  const t = state.teams.find(x=>x.id===state.viewingTeam); if(!t) return '';
+  const applicants = state.teamApplicants[t.id]||[];
+  return `<div class="modal-bg" id="teamModalBg"><div class="modal-box">
+    <h3 style="margin-top:0;">${esc(t.title)}</h3><p style="color:var(--ink-soft);font-size:13.5px;">${esc(t.description)}</p>
+    <h4 style="margin-bottom:8px;">Applicants</h4>
+    ${applicants.length===0?'<p style="color:var(--ink-faint);font-size:13px;">No applicants yet.</p>':''}
+    ${applicants.map(a=>`<div class="switch-row"><div>@${esc(pName(a.applicant))} ${a.status!=='pending'?`<span class="pill ${a.status==='accepted'?'pill':'pill-coral'}">${a.status}</span>`:''}</div>
+      ${a.status==='pending'?`<div style="display:flex;gap:6px;"><button class="btn btn-mint btn-sm" data-decide="${t.id}|${a.applicant}|1">Accept</button><button class="btn btn-outline btn-sm" data-decide="${t.id}|${a.applicant}|0">Decline</button></div>`:''}
+    </div>`).join('')}
+    <div style="margin-top:16px;"><button class="btn btn-outline btn-block" id="closeTeamModal">Close</button></div>
+  </div></div>`;
+}
+
+/* ---------- CHAT ---------- */
+function renderChatList(){
+  const myId = state.authUser.id;
+  const conns = connectionsOf(myId);
+  if(conns.length===0) return `<div class="empty-state"><div class="e-icon">💬</div><h3>No conversations yet</h3><p>Connect with someone from Discover to start chatting.</p></div>`;
+  return `<div class="chat-shell chat-list-mode">
+    <div class="chat-list">${conns.map(id=>`<div class="chat-list-item" data-nav-chat="${id}">${avatarHtml(pName(id),38)}<div style="min-width:0;"><div style="font-weight:700;font-size:14px;">@${esc(pName(id))}</div><div class="student-meta">${esc((state.profiles[id]||{}).department||'')}</div></div></div>`).join('')}</div>
+    <div class="chat-thread" style="align-items:center;justify-content:center;color:var(--ink-faint);"><div style="text-align:center;"><div style="font-size:32px;">💬</div>Pick a conversation to start chatting</div></div>
+  </div>`;
+}
+function renderChatThreadView(){
+  const myId = state.authUser.id;
+  const other = state.activeChatWith;
+  const conns = connectionsOf(myId);
+  return `<div class="chat-shell chat-thread-mode">
+    <div class="chat-list">${conns.map(id=>`<div class="chat-list-item ${id===other?'active':''}" data-nav-chat="${id}">${avatarHtml(pName(id),38)}<div style="min-width:0;"><div style="font-weight:700;font-size:14px;">@${esc(pName(id))}</div></div></div>`).join('')}</div>
+    <div class="chat-thread">
+      <div class="chat-head"><button class="icon-btn mobile-only" id="chatBackBtn" title="Back to conversations">←</button>${avatarHtml(pName(other),32)}<div style="font-weight:700;">@${esc(pName(other))}</div><div style="margin-left:auto;"><button class="btn btn-ghost btn-sm" data-safety="${other}">⋯ More</button></div></div>
+      <div class="chat-msgs" id="chatMsgs"><div style="text-align:center;color:var(--ink-faint);font-size:13px;">Loading…</div></div>
+      <div class="starter-row">${['💡 What are you interested in building?','🏆 Doing any hackathons?','📚 Want to form a study group?'].map(s=>`<button class="starter-chip" data-starter="${esc(s)}">${s}</button>`).join('')}</div>
+      <div class="chat-input-row">
+        <input type="file" id="photoInput" accept="image/*" style="display:none;">
+        <button class="chat-round-btn camera" id="photoBtn" title="Send a photo" aria-label="Send a photo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3L7.5 5H4a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-3.5L15 3H9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+        <input id="chatInput" placeholder="Type a message…" />
+        <button class="chat-round-btn send" id="sendMsgBtn" title="Send" aria-label="Send message">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12L20 4L14 20L11 13L4 12Z" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+async function renderChatThread(otherId){
+  const myId = state.authUser.id;
+  const box = document.getElementById('chatMsgs'); if(!box) return;
+  const msgs = await loadMessages(otherId);
+  box.innerHTML = msgs.length? msgs.map(m=>{
+    const photo = m.image_url ? `<img src="${esc(m.image_url)}" class="chat-photo" data-lightbox="${esc(m.image_url)}" alt="Shared photo">` : '';
+    const text = m.body ? `<div class="${m.image_url?'':'msg-bubble'}" style="${m.image_url?'margin-top:6px;':''}">${esc(m.body)}</div>` : '';
+    return `<div class="msg-row ${m.sender===myId?'mine':''}">${photo}${text}</div>`;
+  }).join('') : `<div style="text-align:center;color:var(--ink-faint);font-size:13px;margin-top:20px;">Say hello 👋 — this is the start of your conversation.</div>`;
+  box.scrollTop = box.scrollHeight;
+  document.querySelectorAll('[data-lightbox]').forEach(el=>el.addEventListener('click', ()=>openLightbox(el.getAttribute('data-lightbox'))));
+}
+function openLightbox(url){
+  const bg = document.createElement('div');
+  bg.className='modal-bg'; bg.style.background='rgba(0,0,0,.88)';
+  bg.innerHTML = `<img src="${esc(url)}" style="max-width:100%;max-height:88vh;border-radius:12px;">`;
+  bg.addEventListener('click', ()=>bg.remove());
+  document.body.appendChild(bg);
+}
+
+/* ---------- NOTIFICATIONS ---------- */
+function renderNotifications(){
+  const myId = state.authUser.id;
+  const incoming = state.requests.filter(r=>r.to_user===myId && r.status==='pending');
+  return `<div>
+    ${incoming.length>0?`<div class="section-head"><h2>Connection requests</h2></div>
+    <div class="grid">${incoming.map(r=>{
+      const u = state.profiles[r.from_user]||{username:'?'};
+      const shared = sharedInterests(myId,r.from_user);
+      return `<div class="student-card">
+        <div class="student-top">${avatarHtml(u.username,44)}<div><div class="student-name">@${esc(u.username)}</div><div class="student-meta">${esc(u.department||'')} • ${esc(u.year||'')}</div></div></div>
+        ${shared.length>0?`<div class="shared-note">✨ ${shared.length} shared interest${shared.length===1?'':'s'}</div>`:''}
+        <div style="display:flex;gap:8px;"><button class="btn btn-mint btn-sm btn-block" data-respond="${r.id}|1">Accept</button><button class="btn btn-outline btn-sm btn-block" data-respond="${r.id}|0">Not now</button></div>
+      </div>`;
+    }).join('')}</div>`:''}
+    <div class="section-head"><h2>Recent activity</h2></div>
+    ${state.notifs.length===0?`<div class="empty-state"><div class="e-icon">🔔</div><h3>Nothing new</h3><p>Your notifications will show up here.</p></div>` :
+    `<div class="card">${state.notifs.map(n=>`<div class="switch-row"><div>${esc(n.body)}</div><div class="student-meta">${timeAgo(n.created_at)}</div></div>`).join('')}</div>`}
+  </div>`;
+}
+
+/* ---------- PROFILE ---------- */
+function renderProfile(userId, isMine){
+  const u = state.profiles[userId]; if(!u) return '<div class="empty-state">Profile not found.</div>';
+  const myId = state.authUser.id;
+  const shared = isMine? [] : sharedInterests(myId,userId);
+  const connected = !isMine && isConnected(myId,userId);
+  const blocked = state.blocks.includes(userId);
+  if(isMine && state.editingProfile) return renderEditProfile(u);
+  return `<div>
+    <div class="card card-shadow" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 20px;">
+      ${avatarHtml(u.username,74)}
+      <div style="font-family:'Sora';font-weight:800;font-size:20px;margin-top:12px;">${esc(u.full_name||'@'+u.username)}</div>
+      <div class="student-meta" style="margin-top:2px;">@${esc(u.username)} • ${esc(u.department)} • ${esc(u.year)}</div>
+      ${u.bio?`<p style="max-width:420px;color:var(--ink-soft);font-size:14px;margin-top:12px;">${esc(u.bio)}</p>`:''}
+      ${shared.length>0?`<div class="shared-note" style="margin-top:8px;">✨ You both share: ${shared.map(esc).join(', ')}</div>`:''}
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;justify-content:center;">
+        ${isMine ? `<button class="btn btn-primary" id="editProfileBtn">Edit Profile</button>` :
+        connected ? `<button class="btn btn-primary" data-nav-chat="${userId}">💬 Message</button>` :
+        pendingRequestBetween(myId,userId) ? `<button class="btn btn-outline" disabled>Request pending</button>` :
+        `<button class="btn btn-coral" data-connect="${userId}">+ Connect</button>`}
+        ${!isMine?`<button class="btn btn-ghost btn-sm" data-safety="${userId}">⋯ More</button>`:''}
+      </div>
+      ${!isMine && blocked ? `<div class="pill pill-coral" style="margin-top:10px;">You've blocked this user</div>`:''}
+    </div>
+    <div class="section-head"><h2>Interests</h2></div>
+    <div class="tag-row">${(u.interests||[]).length?(u.interests||[]).map(i=>`<span class="pill">${esc(i)}</span>`).join(''):'<span class="student-meta">Not shared yet.</span>'}</div>
+    <div class="section-head"><h2>Skills</h2></div>
+    <div class="tag-row">${(u.skills||[]).length?(u.skills||[]).map(i=>`<span class="pill pill-violet">${esc(i)}</span>`).join(''):'<span class="student-meta">Not shared yet.</span>'}</div>
+    <div class="section-head"><h2>Looking for</h2></div>
+    <div class="tag-row">${(u.looking_for||[]).length?(u.looking_for||[]).map(i=>`<span class="pill pill-sun">${esc(i)}</span>`).join(''):'<span class="student-meta">Not shared yet.</span>'}</div>
+    ${u.goals?`<div class="section-head"><h2>Goals</h2></div><div class="card">${esc(u.goals)}</div>`:''}
+    ${isMine?`
+    <div class="section-head"><h2>Settings</h2></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-outline btn-block" data-nav="privacy">🔒 Privacy Center</button>
+      <button class="btn btn-outline btn-block" data-action="logout">🚪 Log out</button>
+    </div>`:''}
+  </div>`;
+}
+function renderEditProfile(u){
+  return `<div class="card card-shadow">
+    <h2 style="margin-top:0;">Edit Profile</h2>
+    <div class="field"><label>Real name</label><input id="editFullName" maxlength="60" value="${esc(u.full_name||'')}" placeholder="Your name"></div>
+    <div class="field"><label>Username</label><input id="editUsername" maxlength="20" value="${esc(u.username||'')}" placeholder="e.g. arun_cse"><div class="student-meta" style="margin-top:5px;">Letters, numbers, and underscores only. Changing this never changes your connections.</div></div>
+    <div class="field"><label>Bio</label><textarea id="editBio" rows="3">${esc(u.bio||'')}</textarea></div>
+    <div class="field"><label>Department</label><select id="editDept">${DEPARTMENTS.map(d=>`<option ${u.department===d?'selected':''}>${d}</option>`).join('')}</select></div>
+    <div class="field"><label>Year</label><select id="editYear">${YEARS.map(y=>`<option ${u.year===y?'selected':''}>${y}</option>`).join('')}</select></div>
+    <div class="field"><label>Interests</label><div class="chip-select" id="editInterests">${INTEREST_OPTIONS.map(i=>`<button type="button" class="chip ${((u.interests||[]).includes(i))?'selected':''}" data-chip="${i}">${i}</button>`).join('')}</div></div>
+    <div class="field"><label>Skills</label><div class="chip-select" id="editSkills">${SKILL_OPTIONS.map(i=>`<button type="button" class="chip ${((u.skills||[]).includes(i))?'selected':''}" data-chip="${i}">${i}</button>`).join('')}</div></div>
+    <div class="field"><label>Looking for</label><div class="chip-select" id="editLooking">${LOOKING_FOR_OPTIONS.map(i=>`<button type="button" class="chip ${((u.looking_for||[]).includes(i))?'selected':''}" data-chip="${i}">${i}</button>`).join('')}</div></div>
+    <div class="field"><label>Goals</label><textarea id="editGoals" rows="2">${esc(u.goals||'')}</textarea></div>
+    <div style="display:flex;gap:10px;"><button class="btn btn-outline btn-block" id="cancelEdit">Cancel</button><button class="btn btn-primary btn-block" id="saveEdit">Save changes</button></div>
+  </div>`;
+}
+
+/* ---------- PRIVACY ---------- */
+function renderPrivacy(){
+  return `<div>
+    <h2 style="margin-top:0;">Private by default. Transparent moderation when necessary.</h2>
+    <div class="card" style="margin-bottom:14px;"><h3>What information do we collect?</h3><p style="color:var(--ink-soft);font-size:14px;">Your email and password (managed securely by Supabase Auth, never visible to us in plain text), department, year, and anything you add to your profile.</p></div>
+    <div class="card" style="margin-bottom:14px;"><h3>Who can see it?</h3><p style="color:var(--ink-soft);font-size:14px;">Other registered students can see your profile in Discover. Messages are only visible to you and the person you're chatting with — enforced at the database level.</p></div>
+    <div class="card" style="margin-bottom:14px;"><h3>What can administrators access?</h3><p style="color:var(--ink-soft);font-size:14px;">Admins see aggregate stats and can review reported activity. Every admin action is written to an audit log.</p></div>
+    <div class="card" style="margin-bottom:14px;"><h3>How does Founder Guide use data?</h3><p style="color:var(--ink-soft);font-size:14px;">Founder Guide chats are not stored in Recircle. When its AI service is enabled, the recent conversation plus the profile summary needed to suggest collaborators are sent to that service. A serious safety-risk signal may create a private review case containing a short excerpt for designated admins. It is not a therapist, diagnosis tool, or emergency service.</p></div>
+    <div class="card" style="margin-bottom:14px;"><h3>How can I block someone?</h3><p style="color:var(--ink-soft);font-size:14px;">Open their profile or a chat and choose "⋯ More → Block." Blocked users won't appear in your Discover feed.</p></div>
+    <div class="card"><h3>Data retention</h3><p style="color:var(--ink-soft);font-size:14px;">Your data is kept as long as your account is active.</p></div>
+  </div>`;
+}
+
+/* =========================================================
+   EVENT BINDING — shell
+   ========================================================= */
+async function goToView(v){
+  state.editingProfile=false; state.view=v; render();
+  if(v==='founderGuide' || v==='cofounderDashboard'){
+    await loadCofounderProfiles();
+    render();
+  }
+}
+function closeMoreSheet(){
+  const bg = document.getElementById('moreSheetBg');
+  if(bg) bg.remove();
+}
+function bindShellEvents(){
+  document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click', ()=>goToView(el.getAttribute('data-nav'))));
+  const moreNavBtn = document.getElementById('moreNavBtn');
+  if(moreNavBtn) moreNavBtn.addEventListener('click', ()=>{
+    const wrap = document.createElement('div');
+    wrap.innerHTML = renderMoreSheet();
+    document.body.appendChild(wrap.firstElementChild);
+    document.querySelectorAll('[data-more-nav]').forEach(el=>el.addEventListener('click', ()=>{ closeMoreSheet(); goToView(el.getAttribute('data-more-nav')); }));
+    const bg = document.getElementById('moreSheetBg');
+    if(bg) bg.addEventListener('click', e=>{ if(e.target.id==='moreSheetBg') closeMoreSheet(); });
+  });
+  document.querySelectorAll('[data-open-crisis]').forEach(el=>el.addEventListener('click', ()=>{ state.crisisPanelOpen=true; render(); }));
+  document.querySelectorAll('[data-close-crisis]').forEach(el=>el.addEventListener('click', ()=>{ state.crisisPanelOpen=false; render(); }));
+  async function stopLooking(){
+    await sb.from('cofounder_profiles').update({ looking:false }).eq('user_id', state.authUser.id);
+    await loadCofounderProfiles();
+    toast('You\'re off the co-founder board. You can restart the interview any time.');
+    render();
+  }
+  const stopLookingBtn = document.getElementById('stopLookingBtn');
+  if(stopLookingBtn) stopLookingBtn.addEventListener('click', stopLooking);
+  const stopLookingBtnDash = document.getElementById('stopLookingBtnDash');
+  if(stopLookingBtnDash) stopLookingBtnDash.addEventListener('click', stopLooking);
+  document.querySelectorAll('[data-ai-action]').forEach(el=>el.addEventListener('click', ()=>{
+    const action=el.getAttribute('data-ai-action');
+    const prompts={
+      checkin:'I want to check in. I feel:',
+      plan:'Help me choose one small next step today.',
+      goal:'Help me write a clear founder brief.',
+    };
+    if(action==='crisis'){ state.crisisPanelOpen=true; render(); return; }
+    if(action==='cofounder'){ startCofounderInterview(); return; }
+    if(action==='team'){
+      const draft = buildTeamDraftFromGuide();
+      state.teamFormOpen=true; state.view='teams';
+      state.onboardData={skillsNeeded:(draft&&draft.skillsNeeded)||[]};
+      state.pendingTeamDraft = draft;
+      state.teamFormDraft = null;
+      render();
+      toast(draft ? 'I\'ve drafted a starting point below — edit anything before posting.' : 'Describe the problem clearly and choose the skills you need.');
+      return;
+    }
+    askFounderGuide(prompts[action]||'I need help with my startup journey.');
+  }));
+  document.querySelectorAll('[data-ai-connect]').forEach(el=>el.addEventListener('click', ()=>{
+    const id=el.getAttribute('data-ai-connect');
+    if(isConnected(state.authUser.id,id)){ state.viewingProfile=id; state.view='viewProfile'; render(); }
+    else sendConnectRequest(id);
+  }));
+  document.querySelectorAll('[data-cofounder-like]').forEach(el=>el.addEventListener('click', ()=>likeCofounder(el.getAttribute('data-cofounder-like'))));
+  const guideInput=document.getElementById('guideInput');
+  const guideSend=document.getElementById('guideSend');
+  if(guideInput && guideSend){
+    const sendGuide=()=>{ const text=guideInput.value; guideInput.value=''; askFounderGuide(text); };
+    guideSend.addEventListener('click',sendGuide);
+    guideInput.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendGuide(); } });
+    const guideChat=document.getElementById('guideChat'); if(guideChat) guideChat.scrollTop=guideChat.scrollHeight;
+  }
+  document.querySelectorAll('[data-action="logout"]').forEach(el=>el.addEventListener('click', doLogout));
+  document.querySelectorAll('[data-connect]').forEach(el=>el.addEventListener('click', ()=>sendConnectRequest(el.getAttribute('data-connect'))));
+  document.querySelectorAll('[data-respond]').forEach(el=>el.addEventListener('click', ()=>{ const [id,acc]=el.getAttribute('data-respond').split('|'); respondRequest(id, acc==='1'); }));
+  document.querySelectorAll('[data-view-profile]').forEach(el=>el.addEventListener('click', ()=>{ state.viewingProfile=el.getAttribute('data-view-profile'); state.view='viewProfile'; render(); }));
+  document.querySelectorAll('[data-nav-chat]').forEach(el=>el.addEventListener('click', ()=>{
+    state.activeChatWith = el.getAttribute('data-nav-chat'); state.view='chatThread'; render();
+    setTimeout(()=>renderChatThread(state.activeChatWith), 30);
+  }));
+
+  const searchQ = document.getElementById('searchQ');
+  if(searchQ) searchQ.addEventListener('input', e=>{ state.discoverFilters.q=e.target.value; render(); const el=document.getElementById('searchQ'); if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);} });
+  ['filterDept','filterYear','filterInterest','filterLooking'].forEach(id=>{
+    const el = document.getElementById(id); if(!el) return;
+    const key = { filterDept:'dept', filterYear:'year', filterInterest:'interest', filterLooking:'lookingFor' }[id];
+    el.addEventListener('change', e=>{ state.discoverFilters[key]=e.target.value; render(); });
+  });
+
+  const openForm = document.getElementById('openTeamForm');
+  if(openForm) openForm.addEventListener('click', ()=>{ state.teamFormOpen=true; state.onboardData={skillsNeeded:[]}; state.pendingTeamDraft=null; state.teamFormDraft=null; render(); });
+  const cancelForm = document.getElementById('cancelTeamForm');
+  if(cancelForm) cancelForm.addEventListener('click', ()=>{ state.teamFormOpen=false; state.pendingTeamDraft=null; state.teamFormDraft=null; render(); });
+  document.querySelectorAll('[data-skill]').forEach(el=>el.addEventListener('click', ()=>{ state.onboardData.skillsNeeded=state.onboardData.skillsNeeded||[]; toggleChip(state.onboardData.skillsNeeded, el.getAttribute('data-skill')); el.classList.toggle('selected'); }));
+  const teamTitleEl = document.getElementById('teamTitle');
+  const teamDescEl = document.getElementById('teamDesc');
+  const teamTypeEl = document.getElementById('teamType');
+  const teamSizeEl = document.getElementById('teamSize');
+  if(teamTitleEl) teamTitleEl.addEventListener('input', e=>{ state.teamFormDraft.title = e.target.value; });
+  if(teamDescEl) teamDescEl.addEventListener('input', e=>{ state.teamFormDraft.description = e.target.value; });
+  if(teamTypeEl) teamTypeEl.addEventListener('change', e=>{ state.teamFormDraft.type = e.target.value; });
+  if(teamSizeEl) teamSizeEl.addEventListener('input', e=>{ state.teamFormDraft.size = parseInt(e.target.value)||4; });
+  const submitForm = document.getElementById('submitTeamForm');
+  if(submitForm) submitForm.addEventListener('click', ()=>{
+    const title = document.getElementById('teamTitle').value.trim();
+    const desc = document.getElementById('teamDesc').value.trim();
+    const type = document.getElementById('teamType').value;
+    const size = parseInt(document.getElementById('teamSize').value)||4;
+    if(!title||!desc){ toast('Please fill in a title and description.'); return; }
+    createTeam({ title, description:desc, type, size, skillsNeeded: state.onboardData.skillsNeeded||[] });
+  });
+  document.querySelectorAll('[data-apply-team]').forEach(el=>el.addEventListener('click', ()=>applyToTeam(el.getAttribute('data-apply-team'))));
+  document.querySelectorAll('[data-view-team]').forEach(el=>el.addEventListener('click', async ()=>{ state.viewingTeam=el.getAttribute('data-view-team'); await loadApplicants(state.viewingTeam); render(); }));
+  const closeTeamModal = document.getElementById('closeTeamModal');
+  if(closeTeamModal) closeTeamModal.addEventListener('click', ()=>{ state.viewingTeam=null; render(); });
+  const teamModalBg = document.getElementById('teamModalBg');
+  if(teamModalBg) teamModalBg.addEventListener('click', e=>{ if(e.target.id==='teamModalBg'){ state.viewingTeam=null; render(); }});
+  document.querySelectorAll('[data-decide]').forEach(el=>el.addEventListener('click', ()=>{ const [teamId,uid,acc]=el.getAttribute('data-decide').split('|'); decideApplicant(teamId, uid, acc==='1'); }));
+
+  const chatBackBtn = document.getElementById('chatBackBtn');
+  if(chatBackBtn) chatBackBtn.addEventListener('click', ()=>{ state.view='chatList'; render(); });
+  const sendBtn = document.getElementById('sendMsgBtn');
+  const chatInput = document.getElementById('chatInput');
+  const photoBtn = document.getElementById('photoBtn');
+  const photoInput = document.getElementById('photoInput');
+  if(sendBtn && chatInput){
+    const send = ()=>{ const v=chatInput.value; chatInput.value=''; sendMessage(state.activeChatWith, v); };
+    sendBtn.addEventListener('click', send);
+    chatInput.addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
+    setTimeout(()=>renderChatThread(state.activeChatWith), 30);
+  }
+  if(photoBtn && photoInput){
+    const photoBtnDefault = photoBtn.innerHTML;
+    photoBtn.addEventListener('click', ()=>{ photoInput.value=''; photoInput.click(); });
+    photoInput.addEventListener('change', async ()=>{
+      const file = photoInput.files && photoInput.files[0];
+      if(!file) return;
+      photoBtn.disabled = true; photoBtn.style.opacity = '0.45';
+      try{
+        const url = await uploadChatPhoto(file);
+        if(url){
+          const caption = chatInput ? chatInput.value : '';
+          if(chatInput) chatInput.value = '';
+          await sendMessage(state.activeChatWith, caption, url);
+        }
+      } catch(e){
+        toast('Could not send that photo: '+e.message);
+      } finally {
+        photoBtn.disabled = false; photoBtn.style.opacity = '';
+        photoBtn.innerHTML = photoBtnDefault;
+      }
+    });
+  }
+  document.querySelectorAll('[data-starter]').forEach(el=>el.addEventListener('click', ()=>sendMessage(state.activeChatWith, el.getAttribute('data-starter'))));
+
+  const editBtn = document.getElementById('editProfileBtn');
+  if(editBtn) editBtn.addEventListener('click', ()=>{ state.editingProfile=true; render(); });
+  const cancelEdit = document.getElementById('cancelEdit');
+  if(cancelEdit) cancelEdit.addEventListener('click', ()=>{ state.editingProfile=false; render(); });
+  document.querySelectorAll('[data-chip]').forEach(el=>el.addEventListener('click', ()=>{
+    const parentId = el.parentElement.id;
+    const key = { editInterests:'interests', editSkills:'skills', editLooking:'looking_for' }[parentId];
+    state.me[key] = state.me[key]||[];
+    toggleChip(state.me[key], el.getAttribute('data-chip'));
+    el.classList.toggle('selected');
+  }));
+  const saveEdit = document.getElementById('saveEdit');
+  if(saveEdit) saveEdit.addEventListener('click', async ()=>{
+    const fullName = document.getElementById('editFullName').value.trim().replace(/\s+/g,' ');
+    const username = document.getElementById('editUsername').value.trim().toLowerCase();
+    if(fullName.length<2 || fullName.length>60){ toast('Enter a real name between 2 and 60 characters.'); return; }
+    if(!/^[a-z0-9_]{3,20}$/.test(username)){ toast('Username must be 3-20 letters, numbers, or underscores.'); return; }
+    if(username!==state.me.username){
+      const { data: existing, error: lookupError } = await sb.from('profiles').select('id').eq('username',username).neq('id',state.authUser.id).maybeSingle();
+      if(lookupError){ toast('Could not check that username. Please try again.'); return; }
+      if(existing){ toast('That username is already taken.'); return; }
+    }
+    const updates = {
+      full_name: fullName,
+      username,
+      bio: document.getElementById('editBio').value.trim(),
+      department: document.getElementById('editDept').value,
+      year: document.getElementById('editYear').value,
+      goals: document.getElementById('editGoals').value.trim(),
+      interests: state.me.interests||[], skills: state.me.skills||[], looking_for: state.me.looking_for||[]
+    };
+    const { error } = await sb.from('profiles').update(updates).eq('id', state.authUser.id);
+    if(error){ toast('Could not save: '+error.message); return; }
+    await loadAllData();
+    state.editingProfile=false; toast('Profile updated!'); render();
+  });
+
+  document.querySelectorAll('[data-safety]').forEach(el=>el.addEventListener('click', ()=>openSafetyModal(el.getAttribute('data-safety'))));
+}
+function openSafetyModal(targetId){
+  const blocked = state.blocks.includes(targetId);
+  const bg = document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML = `<div class="modal-box">
+    <h3 style="margin-top:0;">@${esc(pName(targetId))}</h3>
+    <button class="btn btn-outline btn-block" style="margin-bottom:10px;" id="blockBtn">${blocked?'Unblock':'Block'} this student</button>
+    <div class="field"><label>Report this student</label><select id="reportReason"><option>Harassment</option><option>Spam</option><option>Fake account</option><option>Impersonation</option><option>Inappropriate content</option><option>Other</option></select></div>
+    <div class="field"><textarea id="reportDetails" rows="2" placeholder="Add any details (optional)"></textarea></div>
+    <div style="display:flex;gap:10px;"><button class="btn btn-outline btn-block" id="closeSafety">Cancel</button><button class="btn btn-coral btn-block" id="submitReportBtn">Submit report</button></div>
+  </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#closeSafety').addEventListener('click', ()=>bg.remove());
+  bg.addEventListener('click', e=>{ if(e.target===bg) bg.remove(); });
+  bg.querySelector('#blockBtn').addEventListener('click', async ()=>{ await toggleBlock(targetId); bg.remove(); toast(blocked?'Unblocked.':'Blocked.'); });
+  bg.querySelector('#submitReportBtn').addEventListener('click', async ()=>{
+    const reason = bg.querySelector('#reportReason').value; const details = bg.querySelector('#reportDetails').value;
+    await submitReport(targetId, reason, details); bg.remove();
+  });
+}
+
+/* =========================================================
+   AUTH VIEW
+   ========================================================= */
+function renderAuth(){
+  const t = state.authTab;
+  return `<div class="auth-wrap"><div class="auth-box">
+    <div class="auth-hero"><div class="logo-row">${logoSvg(38)}<span style="font-family:'Sora';font-weight:800;font-size:23px;">RECIRCLE</span></div><h1>Find your people.</h1><p>The private student network for REC South Campus.</p></div>
+    <div class="tab-row"><button class="tab-btn ${t==='login'?'active':''}" data-tab="login">Log in</button><button class="tab-btn ${t==='signup'?'active':''}" data-tab="signup">Sign up</button></div>
+    <div class="card card-shadow">
+      ${t==='login' ? `
+        <div class="field"><label>College email</label><input id="loginEmail" type="email" placeholder="you@college.edu" autocomplete="username"></div>
+        <div class="field"><label>Password</label><input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+        ${state.authError?`<div class="field-err">${esc(state.authError)}</div>`:''}
+        <button class="btn btn-primary btn-block" id="loginBtn">Log in</button>
+      ` : `
+        <div class="field"><label>College email</label><input id="suEmail" type="email" placeholder="you@college.edu"></div>
+        <div class="field"><label>Real name</label><input id="suName" maxlength="60" placeholder="e.g. Arun Kumar" autocomplete="name"></div>
+        <div class="field"><label>Choose a username</label><input id="suUser" placeholder="e.g. arun_cse"></div>
+        <div class="field"><label>Create a password</label><input id="suPass" type="password" placeholder="At least 6 characters"></div>
+        <div class="field"><label>Department</label><select id="suDept"><option value="">Select department</option>${DEPARTMENTS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+        <div class="field"><label>Year</label><select id="suYear"><option value="">Select year</option>${YEARS.map(y=>`<option>${y}</option>`).join('')}</select></div>
+        ${state.authError?`<div class="field-err">${esc(state.authError)}</div>`:''}
+        <button class="btn btn-primary btn-block" id="signupBtn">Create account</button>
+      `}
+    </div>
+    <p style="text-align:center;color:var(--ink-faint);font-size:12px;margin-top:16px;">This is a private network for REC South Campus students only. By joining, your profile becomes visible to other verified students.</p>
+  </div></div>`;
+}
+function bindAuthEvents(){
+  document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click', ()=>{ state.authTab=el.getAttribute('data-tab'); state.authError=''; render(); }));
+  const loginBtn = document.getElementById('loginBtn');
+  if(loginBtn) loginBtn.addEventListener('click', ()=>doLogin(document.getElementById('loginEmail').value, document.getElementById('loginPass').value));
+  const signupBtn = document.getElementById('signupBtn');
+  if(signupBtn) signupBtn.addEventListener('click', ()=>doRegister(
+    document.getElementById('suEmail').value, document.getElementById('suName').value, document.getElementById('suUser').value, document.getElementById('suPass').value,
+    document.getElementById('suDept').value, document.getElementById('suYear').value
+  ));
+  document.querySelectorAll('input').forEach(inp=>inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ (state.authTab==='login'?loginBtn:signupBtn)?.click(); } }));
+}
+
+/* ---------- ONBOARDING ---------- */
+function renderOnboarding(){
+  const d = state.onboardData;
+  const steps = ['Tell us about you','Your interests','Your skills','What are you looking for?'];
+  return `<div class="auth-wrap"><div class="auth-box" style="max-width:480px;">
+    <div class="auth-hero"><h1>${steps[state.onboardStep-1]}</h1><p>Step ${state.onboardStep} of 4 — this helps other students find you.</p></div>
+    <div class="card card-shadow">
+      ${state.onboardStep===1?`<div class="field"><label>Short bio</label><textarea id="obBio" rows="3" placeholder="e.g. Interested in AI, electronics, and startups.">${esc(d.bio||'')}</textarea></div>`:''}
+      ${state.onboardStep===2?`<div class="field"><label>Pick a few interests</label><div class="chip-select">${INTEREST_OPTIONS.map(i=>`<button type="button" class="chip ${d.interests.includes(i)?'selected':''}" data-ob-chip="interests|${i}">${i}</button>`).join('')}</div></div>`:''}
+      ${state.onboardStep===3?`<div class="field"><label>Pick your skills</label><div class="chip-select">${SKILL_OPTIONS.map(i=>`<button type="button" class="chip ${d.skills.includes(i)?'selected':''}" data-ob-chip="skills|${i}">${i}</button>`).join('')}</div></div>`:''}
+      ${state.onboardStep===4?`<div class="field"><label>What are you looking for?</label><div class="chip-select">${LOOKING_FOR_OPTIONS.map(i=>`<button type="button" class="chip ${d.lookingFor.includes(i)?'selected':''}" data-ob-chip="lookingFor|${i}">${i}</button>`).join('')}</div></div><div class="field"><label>Goals (optional)</label><textarea id="obGoals" rows="2">${esc(d.goals||'')}</textarea></div>`:''}
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        ${state.onboardStep>1?`<button class="btn btn-outline btn-block" id="obBack">Back</button>`:''}
+        <button class="btn btn-primary btn-block" id="obNext">${state.onboardStep===4?'Finish':'Continue'}</button>
+      </div>
+      ${state.onboardStep<4?`<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost btn-sm" id="obSkip">Skip for now</button></div>`:''}
+    </div>
+  </div></div>`;
+}
+function bindOnboardingEvents(){
+  document.querySelectorAll('[data-ob-chip]').forEach(el=>el.addEventListener('click', ()=>{ const [key,val]=el.getAttribute('data-ob-chip').split('|'); toggleChip(state.onboardData[key], val); el.classList.toggle('selected'); }));
+  const back = document.getElementById('obBack'); if(back) back.addEventListener('click', ()=>{ state.onboardStep--; render(); });
+  const skip = document.getElementById('obSkip'); if(skip) skip.addEventListener('click', finishOnboarding);
+  const next = document.getElementById('obNext');
+  if(next) next.addEventListener('click', ()=>{
+    if(state.onboardStep===1) state.onboardData.bio = document.getElementById('obBio').value.trim();
+    if(state.onboardStep===4){ state.onboardData.goals = document.getElementById('obGoals').value.trim(); finishOnboarding(); return; }
+    state.onboardStep++; render();
+  });
+}
+
+/* =========================================================
+   ADMIN DASHBOARD  (only reachable if profiles.is_admin = true,
+   which you set yourself via the Supabase SQL editor)
+   ========================================================= */
+function renderAdminDashboard(){
+  const users = Object.values(state.profiles);
+  const suspended = users.filter(u=>u.suspended).length;
+  const openReports = state.reports.filter(r=>r.status==='open').length;
+  const openSafetyFlags = state.safetyFlags.filter(f=>f.status==='open').length;
+  const av = state.adminView;
+  return `<div class="admin-shell">
+    <div class="admin-top">
+      <div style="display:flex;align-items:center;gap:10px;">${logoSvg(26)}<span style="font-weight:700;">RECIRCLE Admin</span></div>
+      <div style="display:flex;gap:10px;"><button class="btn btn-outline btn-sm" id="backToApp">Back to app</button></div>
+    </div>
+    <div class="admin-content">
+      <div style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;">
+        ${['overview','safety','users','reports','teams','audit'].map(v=>`<button class="btn btn-sm ${av===v?'btn-mint':'btn-outline'}" data-aview="${v}">${v==='safety'&&openSafetyFlags?`Safety (${openSafetyFlags})`:v[0].toUpperCase()+v.slice(1)}</button>`).join('')}
+      </div>
+      ${av==='overview'?renderAdminOverview(users,suspended,openReports,openSafetyFlags):''}
+      ${av==='safety'?renderAdminSafetyFlags():''}
+      ${av==='users'?renderAdminUsers(users):''}
+      ${av==='reports'?renderAdminReports():''}
+      ${av==='teams'?renderAdminTeams():''}
+      ${av==='audit'?renderAdminAudit():''}
+    </div>
+  </div>`;
+}
+function renderAdminOverview(users,suspended,openReports,openSafetyFlags){
+  return `<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:24px;">
+    <div class="admin-stat"><div class="num">${users.length}</div><div class="lbl">Total students</div></div>
+    <div class="admin-stat"><div class="num">${state.connections.length}</div><div class="lbl">Connections made</div></div>
+    <div class="admin-stat"><div class="num">${state.teams.length}</div><div class="lbl">Teams created</div></div>
+    <div class="admin-stat"><div class="num">${openReports}</div><div class="lbl">Open reports</div></div>
+    <div class="admin-stat"><div class="num">${openSafetyFlags}</div><div class="lbl">Safety reviews</div></div>
+    <div class="admin-stat"><div class="num">${suspended}</div><div class="lbl">Suspended accounts</div></div>
+    <div class="admin-stat"><div class="num">${state.requests.filter(r=>r.status==='pending').length}</div><div class="lbl">Pending requests</div></div>
+  </div>
+  <div class="admin-card"><h3>Safety review protocol</h3><p style="color:#8695A8;font-size:13.5px;">The Safety tab contains only AI-flagged excerpts from Founder Guide chats. It is not an emergency dispatch system. Review promptly using your campus escalation protocol and record the outcome; do not diagnose or rely on this queue as the only response.</p></div>`;
+}
+function renderAdminSafetyFlags(){
+  const flags=state.safetyFlags||[];
+  return `<div class="admin-card"><h3>Safety review queue</h3><p style="color:#8695A8;font-size:13px;">Private review cases are created only for serious safety-risk signals in Founder Guide. This queue needs a trained, designated responder.</p>
+    ${flags.length===0?'<p style="color:#8695A8;">No safety reviews are waiting.</p>':''}
+    ${flags.map(f=>`<div class="card" style="background:#0C1420;border-color:#1E2A3A;margin-bottom:10px;"><div style="display:flex;justify-content:space-between;gap:12px;"><div><div style="font-weight:700;">${esc(f.risk_level)} priority — @${esc(pName(f.user_id))}</div><div style="color:#8695A8;font-size:12px;margin-top:2px;">${esc(f.category)} • ${timeAgo(f.created_at)}</div><div style="margin-top:9px;line-height:1.45;">${esc(f.excerpt)}</div></div><span class="badge-${f.status==='open'?'open':f.status==='dismissed'?'dismissed':'resolved'}">${esc(f.status)}</span></div>
+      ${f.status==='open'?`<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;"><button class="btn btn-mint btn-sm" data-safety-flag="${f.id}|contacted">Mark contacted</button><button class="btn btn-outline btn-sm" data-safety-flag="${f.id}|resolved">Resolve</button><button class="btn btn-outline btn-sm" data-safety-flag="${f.id}|dismissed">Dismiss</button></div>`:''}
+    </div>`).join('')}
+  </div>`;
+}
+function renderAdminUsers(users){
+  return `<div class="admin-card"><h3>All students</h3><div class="table-scroll"><table><thead><tr><th>Username</th><th>Department</th><th>Year</th><th>Joined</th><th>Status</th><th></th></tr></thead><tbody>
+    ${users.length===0?`<tr><td colspan="6" style="color:#8695A8;">No students registered yet.</td></tr>`:''}
+    ${users.map(u=>`<tr><td>@${esc(u.username)}</td><td>${esc(u.department)}</td><td>${esc(u.year)}</td><td>${new Date(u.created_at).toLocaleDateString()}</td>
+      <td>${u.suspended?'<span class="badge-open">Suspended</span>':'<span class="badge-resolved">Active</span>'}</td>
+      <td><button class="btn btn-sm ${u.suspended?'btn-mint':'btn-coral'}" data-toggle-suspend="${u.id}">${u.suspended?'Reinstate':'Suspend'}</button></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function renderAdminReports(){
+  return `<div class="admin-card"><h3>Reports</h3>
+    ${state.reports.length===0?'<p style="color:#8695A8;">No reports filed.</p>':''}
+    ${state.reports.map(r=>`<div class="card" style="background:#0C1420;border-color:#1E2A3A;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div style="font-weight:700;">Report #${r.id.slice(-4)} — ${esc(r.reason)}</div>
+        <div style="color:#8695A8;font-size:12.5px;margin-top:2px;">Reported by @${esc(pName(r.reporter))} • against @${esc(pName(r.reported))} • ${timeAgo(r.created_at)}</div>
+        ${r.details?`<div style="margin-top:8px;font-size:13.5px;">${esc(r.details)}</div>`:''}</div>
+        <span class="badge-${r.status==='open'?'open':r.status==='resolved'?'resolved':'dismissed'}">${r.status}</span>
+      </div>
+      ${r.status==='open'?`<div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-mint btn-sm" data-report-action="${r.id}|warn">Warn user</button>
+        <button class="btn btn-coral btn-sm" data-report-action="${r.id}|suspend">Suspend user</button>
+        <button class="btn btn-outline btn-sm" data-report-action="${r.id}|dismiss">Dismiss</button>
+      </div>`:''}
+    </div>`).join('')}
+  </div>`;
+}
+function renderAdminTeams(){
+  return `<div class="admin-card"><h3>Teams</h3><div class="table-scroll"><table><thead><tr><th>Title</th><th>Type</th><th>Creator</th><th>Members</th><th>Status</th></tr></thead><tbody>
+    ${state.teams.length===0?`<tr><td colspan="5" style="color:#8695A8;">No teams yet.</td></tr>`:''}
+    ${state.teams.map(t=>`<tr><td>${esc(t.title)}</td><td>${t.type}</td><td>@${esc(pName(t.creator))}</td><td>${t.members.length}/${t.size}</td><td>${t.status}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function renderAdminAudit(){
+  const log = state.auditLog||[];
+  return `<div class="admin-card"><h3>Audit log</h3><div class="table-scroll"><table><thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Reason</th></tr></thead><tbody>
+    ${log.length===0?`<tr><td colspan="4" style="color:#8695A8;">No admin actions logged yet.</td></tr>`:''}
+    ${log.map(l=>`<tr><td>${new Date(l.created_at).toLocaleString()}</td><td>${esc(l.action)}</td><td>@${esc(pName(l.target))}</td><td>${esc(l.reason||'')}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+async function logAdminAction(action, targetId, reason){
+  await sb.from('audit_log').insert({ admin: state.authUser.id, action, target: targetId, reason: reason||'' });
+}
+function bindAdminDashboardEvents(){
+  document.getElementById('backToApp').addEventListener('click', ()=>{ state.view='home'; render(); });
+  document.querySelectorAll('[data-aview]').forEach(el=>el.addEventListener('click', async ()=>{
+    state.adminView = el.getAttribute('data-aview');
+    if(state.adminView==='audit'){ const {data} = await sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(200); state.auditLog=data||[]; }
+    render();
+  }));
+  document.querySelectorAll('[data-toggle-suspend]').forEach(el=>el.addEventListener('click', async ()=>{
+    const uid = el.getAttribute('data-toggle-suspend');
+    const u = state.profiles[uid];
+    const newVal = !u.suspended;
+    await sb.from('profiles').update({ suspended: newVal }).eq('id', uid);
+    await logAdminAction(newVal?'Suspended account':'Reinstated account', uid, 'Manual admin action');
+    await loadAllData();
+    toast(newVal?'Account suspended.':'Account reinstated.'); render();
+  }));
+  document.querySelectorAll('[data-report-action]').forEach(el=>el.addEventListener('click', async ()=>{
+    const [id, action] = el.getAttribute('data-report-action').split('|');
+    const r = state.reports.find(x=>x.id===id); if(!r) return;
+    if(action==='warn'){ await sb.from('reports').update({status:'resolved'}).eq('id',id); await sb.from('notifications').insert({user_id:r.reported, type:'warning', body:'You received a warning from campus admin regarding recent activity.'}); await logAdminAction('Issued warning', r.reported, r.reason); }
+    if(action==='suspend'){ await sb.from('reports').update({status:'resolved'}).eq('id',id); await sb.from('profiles').update({suspended:true}).eq('id', r.reported); await logAdminAction('Suspended account', r.reported, r.reason); }
+    if(action==='dismiss'){ await sb.from('reports').update({status:'dismissed'}).eq('id',id); await logAdminAction('Dismissed report', r.reported, r.reason); }
+    await loadAllData();
+    toast('Report updated.'); render();
+  }));
+  document.querySelectorAll('[data-safety-flag]').forEach(el=>el.addEventListener('click', async ()=>{
+    const [id,status]=el.getAttribute('data-safety-flag').split('|');
+    const flag=state.safetyFlags.find(f=>f.id===id); if(!flag) return;
+    const { error }=await sb.from('ai_safety_flags').update({status,reviewed_at:new Date().toISOString(),reviewed_by:state.authUser.id}).eq('id',id);
+    if(error){ toast('Could not update this safety review.'); return; }
+    await logAdminAction(`Safety review marked ${status}`,flag.user_id,flag.category);
+    await loadAllData(); toast('Safety review updated.'); render();
+  }));
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+async function init(){
+  if(!CONFIGURED){ render(); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    state.authUser = session.user;
+    await loadAllData();
+    seedCelebratedIfNeeded();
+    if(!state.me){ state.view='onboarding'; state.onboardStep=1; state.onboardData={interests:[],skills:[],lookingFor:[]}; }
+    else state.view = (state.me.interests?.length || state.me.bio) ? 'home' : 'onboarding';
+    if(state.view==='onboarding' && !state.onboardData.interests) state.onboardData={interests:[],skills:[],lookingFor:[]};
+  } else {
+    state.view='login';
+  }
+  render();
+
+  sb.auth.onAuthStateChange((event, session)=>{
+    if(event==='SIGNED_OUT'){ state.authUser=null; state.me=null; state.view='login'; render(); }
+  });
+
+  setInterval(async ()=>{
+    if(!state.authUser) return;
+    await refreshLite();
+    if(['discover','home','circle','notifications','teams'].includes(state.view) && !state.teamFormOpen) render();
+    if(state.view==='chatThread' && state.activeChatWith) renderChatThread(state.activeChatWith);
+  }, 8000);
+
+  // Re-measure whenever the real visible area changes — rotating the phone,
+  // the browser's own address bar sliding away on scroll, or the keyboard
+  // opening. This is what actually fixes "short screen" devices, rather than
+  // any one fixed pixel guess.
+  window.addEventListener('resize', ()=>requestAnimationFrame(adjustMobileLayout));
+  window.addEventListener('orientationchange', ()=>setTimeout(adjustMobileLayout, 200));
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', ()=>requestAnimationFrame(adjustMobileLayout));
+  }
+}
+init();
+
+// Register the service worker so Chrome/Android offer a real "Install app"
+// option (this is required for installability — see sw.js for details).
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* fine to ignore — app still works in-browser */ });
+  });
+}
+</script>
+</body>
+</html>
